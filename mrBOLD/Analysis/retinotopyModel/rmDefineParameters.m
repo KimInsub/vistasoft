@@ -385,7 +385,8 @@ switch lower(params.analysis.pRFmodel{1})
     case {'cst'}
         % each grid step becomes larger (0.6) comapared to previous
         % params.analysis.maxRF step size
-        params.analysis.maxRF = params.analysis.fieldSize + 10; 
+        params.analysis.maxRF = params.analysis.fieldSize + 10; % if you want even bigger prf
+        params.analysis.maxRF = params.analysis.fieldSize;
         params.analysis.coarseDecimate = 0;
         params.analysis.nonlinear = true;
 
@@ -504,7 +505,9 @@ switch params.analysis.pRFmodel{1}
     
     case {'cst'}
         % The number of exponents for nonlinear model (pred = (stim*prf)^exponent)
-        params.analysis.numberExponents = 4 ;
+        
+        % I just go with 2 exponents for now to save time %%%%%%%%%%%
+        params.analysis.numberExponents = 2 ;
         
         numberOfGridPoints          = length(keep);
         
@@ -981,6 +984,9 @@ for n=1:2:numel(vararg),
 
         case {'refine','search fit refine parameter'}
             params.analysis.fmins.refine = data;
+            
+        case {'temporaltype','tt','temporal'}
+            params.analysis.temporal = data;
             
         otherwise,
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...

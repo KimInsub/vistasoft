@@ -24,7 +24,7 @@ model.rss=single(model.rss./(size(prediction,1)-size(trends,2)+1));
 %-----------------------------------
 tic; progress = 0;
 
-%warning('off', 'MATLAB:lscov:RankDefDesignMat')
+warning('off', 'MATLAB:lscov:RankDefDesignMat')
 
 for n=1:numel(params.analysis.x0),
     %-----------------------------------

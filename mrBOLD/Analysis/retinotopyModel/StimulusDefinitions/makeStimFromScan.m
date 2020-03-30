@@ -114,20 +114,20 @@ I               = subSpatialDownsample(I, params);
 switch lower(params.analysis.pRFmodel{1})
     case {'cst'}
         
-        if isfile('cst_stim.mat')
+        if isfile(['cst_' params.analysis.temporal '_stim.mat'])
             disp('*cst stim file exists no need to make a new one!*')
-            load('cst_stim.mat');
-        else 
-            output = cst_stimconvert(P.images);
-            %constim = output(51,51,:);
-            %save('constim.mat', 'constim','-v7.3');
-            %error('wow')
-            output2 = reshape(output ,size(output,1)*size(output,2),[]);
-            save('cst_stim.mat', 'output2','-v7.3');
-
+            load(['cst_' params.analysis.temporal '_stim.mat']);
+        else
+            [output, temporal] = cst_stimconvert(P.images, params.analysis.temporal, ...
+                 0.033 ,30, 0,[]);
+            cststim = reshape(output ,size(output,1)*size(output,2),[]);
+            save('cst_stim.mat', 'cststim','temporal','-v7.3');
+            
+            
         end
         
-        images = output2;
+        images = cststim;
+        
     otherwise
         [images, params]= subTemporalDownsample(I, P, params, id);
 

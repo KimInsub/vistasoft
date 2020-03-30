@@ -428,7 +428,7 @@ for slice=loopSlices,
           
             case {'cst', ...
                     '2d css nonlinear spatiotemporal prf fit'}
-                s{n}=rmSearchFit_oneGaussianNonlinear(s{n},data,params,wProcess,t);
+                s{n}=rmSearchFit_temporal(s{n},data,params,wProcess,t);
 
             otherwise
                 fprintf('[%s]:Unknown pRF model: %s: IGNORED!\n',mfilename,desc);

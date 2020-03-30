@@ -117,7 +117,7 @@ if ~checkfields(params, 'analysis', 'nonlinear') || ~params.analysis.nonlinear
 % cst model    
 elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
     
-    predictionFile = './prediction.mat';
+    predictionFile = ['./prediction-' params.analysis.temporal '.mat'];
     if ~isfile(predictionFile)
         
         allstimimages = params.analysis.allstimimages_unconvolved;
@@ -130,58 +130,81 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
         allstimimages(find(allstimimages)) = 1;
         cellimage = num2cell(allstimimages,1)';
         
-        %%%% get temporal model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%% set temporal model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         fit_exps = {'Exp2'};
         
         % make this so we can parse as an inputs
         temp_type = '1ch-glm';
         temp_type = '2ch-exp-sig';
-        dohrf = 2;
+        dohrf = 2;   
         
+     
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
         
         mn = length(cellimage);  % Is this the position?
         ms = [[1:ceil(mn./1000):mn-2] mn+1]; %#ok<NBRAK>
         tic
-        fprintf('Generating predictors for %s model...\n', temp_type)
+        fprintf('Generating irf for %s model...\n', temp_type)
         for mn = 1:numel(ms)-1
-%          parfor mn = 1:length(cellimage)
+            
+            stimirf_base=[];
+            stimirf_t_s=[];
+            stimirf_t_t=[];
+            
+            tmodel = stModel(temp_type, fit_exps,'default');
 
-            stimirf_t=[];
+            tmodel.stim = cellimage(ms(mn):ms(mn+1)-1);
             
-            modeltt = stModel(temp_type, fit_exps);
-            
-            modeltt.stim = cellimage(ms(mn):ms(mn+1)-1);
-                    
-            [modeltt.onsets, modeltt.offsets, dur] = cellfun(@cst_codestim, ...
-                modeltt.stim, 'uni', false);
-        
-            %%%% think about how to normalize sustained and transient 
-            modeltt = cst_pred_runs(modeltt,dohrf);
-            
-            %%%% transpose and sum up two channels 
-            stimirf_t = cellfun(@transpose,modeltt.pixel_preds,'UniformOutput',false);
-            
-            
-            if contains(temp_type,'2ch')
-                stimirf = cellfun(@sum, stimirf, 'uni', false);
+            % temporal channel normalization
+            % need to think about ways of normalizing in the future.
+            temporal_channel_normalization=true;
+            if ~temporal_channel_normalization
+                tmodel.normT = 1;
             end
             
-            stimirf_t=cell2mat(stimirf_t)';
             
-            stimirf(:,ms(mn):ms(mn+1)-1) = stimirf_t;
-%             stimirf{mn} = stimirf_t;
+            [tmodel.onsets, tmodel.offsets, dur] = cellfun(@cst_codestim, ...
+                tmodel.stim, 'uni', false);
+            
+            tmodel = cst_pred_runs(tmodel,dohrf);
+            
+            %%%% transpose and sum up two channels 
+            stimirf_base = cellfun(@transpose,tmodel.pixel_preds,'UniformOutput',false);
+            
+            if contains(temp_type,'2ch')
+                
+                stimirf_t_s  = cell2mat(cellfun(@(X) X(1,:), stimirf_base, 'uni', false))'; %  sustained
+                stimirf_t_t  = cell2mat(cellfun(@(X) X(2,:), stimirf_base, 'uni', false))'; % transient
+                stimirf_base = cell2mat(cellfun(@sum, stimirf_base, 'uni', false))';        % sum
+                
+                stimirf_chan_s(:,ms(mn):ms(mn+1)-1) = stimirf_t_s;
+                stimirf_chan_t(:,ms(mn):ms(mn+1)-1) = stimirf_t_t;                
+            else
+                stimirf_base=cell2mat(stimirf_base)'; %        30000     X   1412
+            end
+            
+            stimirf(:,ms(mn):ms(mn+1)-1) = stimirf_base;
+
+        end
+        
+        if tmodel.num_channels == 2
+            tmodel.chan_preds{1} = stimirf_chan_s;
+            tmodel.chan_preds{2} = stimirf_chan_t;
+        else
+            tmodel.chan_preds{1} = stimirf_base;
         end
         toc
-        clear stimirf_t
-        %%%% clean up format  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % stimirf = cellfun(@(X) X(2,:), stimirf, 'uni', false);
+        clear stimirf_t stimirf_chan_s stimirf_chan_t stimirf_t_s stimirf_t_t
    
-        
-        
-        prediction = zeros(size(stimirf,1)/modeltt.fs,n,'single');
+                
+        prediction = zeros(size(stimirf,1)/tmodel.fs,n,tmodel.num_channels,'single');
         % loop over grid
         tic
         for n=1:numel(s)-1
+            
+            fprintf('Generating predictors for %s model...%d/%d \n', temp_type,n,numel(s)-1)
+
             % make rfs
             rf   = rfGaussian2d(params.analysis.X, params.analysis.Y,...
                 params.analysis.sigmaMajor(s(n):s(n+1)-1), ...
@@ -190,48 +213,53 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
                 params.analysis.x0(s(n):s(n+1)-1), ...
                 params.analysis.y0(s(n):s(n+1)-1));
             
-            % convolve rf with stimulus
-            pred = stimirf*rf;
-            
-            % apply css
-            pred = bsxfun(@power, pred, params.analysis.exponent(s(n):s(n+1)-1)');
-            pred = double(pred);
-            
-            % apply hrf
-            pred_cell = num2cell(pred,1)';
-            npixel_max = size(s(n):s(n+1)-1,2);
-            
-            % use mrvista HRF
-             %   params.stim(n).images = filter(params.analysis.Hrf{n}, 1, params.stim(n).images'); % images: pixels by time (so images': time x pixels)
-            hrf = params.analysis.Hrf;
-%             hrf = modeltt.irfs.hrf;
-            curhrf = repmat(hrf, npixel_max, 1);
-            pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, modeltt.fs, 1 / modeltt.tr), ...
-                pred_cell, curhrf, 'uni', false);
-            pred_hrf = cellfun(@transpose,pred_hrf,'UniformOutput',false);
-            pred_hrf=cell2mat(pred_hrf)';
-            
-            % store
-           prediction(:,s(n):s(n+1)-1) = pred_hrf;
-%             prediction{n} = pred_hrf;
-
-        
+            % convolve rf with stimulus for each t-channel
+            for cc=1:tmodel.num_channels
+                pred = tmodel.chan_preds{cc}*rf;
+                
+                % apply css
+                pred = bsxfun(@power, pred, params.analysis.exponent(s(n):s(n+1)-1)');
+                pred = double(pred);
+                
+                % apply hrf
+                pred_cell = num2cell(pred,1)';
+                npixel_max = size(s(n):s(n+1)-1,2);
+                
+                % use mrvista HRF
+                %   params.stim(n).images = filter(params.analysis.Hrf{n}, 1, params.stim(n).images'); % images: pixels by time (so images': time x pixels)
+%                 hrf = params.analysis.Hrf;
+                hrf = tmodel.irfs.hrf;
+                curhrf = repmat(hrf, npixel_max, 1);
+                pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, tmodel.fs, 1 / tmodel.tr), ...
+                    pred_cell, curhrf, 'uni', false);
+                pred_hrf = cellfun(@transpose,pred_hrf,'UniformOutput',false);
+                pred_hrf=cell2mat(pred_hrf)';
+                
+                % store
+                prediction(:,s(n):s(n+1)-1,cc) = pred_hrf;
+                %             prediction{n} = pred_hrf;
+                
+            end
             if ismember(n, round((1:10)/10* numel(s)-1)), % every 10% draw a dot
                 fprintf(1,'(=.=)');drawnow;
             end
+            
         end
-        model.run_preds = num2cell(prediction,1)';
-        save('prediction.mat','model','prediction', '-v7.3');
-
+        
+        tmodel.run_preds = prediction;
+        
+        save(predictionFile,'tmodel', '-v7.3');
+        
         clear n s rf pred pred_hrf pred_cell;
         fprintf(1, 'Done[%d min].\t(%s)\n', round(toc/60), datestr(now));
         drawnow;
         
     else
-        load('prediction.mat')
+        load(predictionFile)
     end
-
     
+ 
+
     
 else
     allstimimages = params.analysis.allstimimages_unconvolved;
@@ -314,7 +342,11 @@ for slice=loopSlices,
     %    trendBetas(ntrends+1:end) = 0;
     %    ntrends = ntrends + size(params.analysis.allnuisance,2);
     %end
-    data = data - trends*trendBetas;
+    
+    %%%%% don't do this for single pulse
+    if size(data,1) > 30
+        data = data - trends*trendBetas;
+    end
     
     % reset DC component by specific data-period (if requested)
     if params.analysis.dc.datadriven
@@ -378,7 +410,7 @@ for slice=loopSlices,
         t.trends = trends(:,dcid);
         t.dcid   = dcid;       
     end
-    
+
     % Run the grid fit estimate for this slice, s{}.
     for n=1:numel(params.analysis.pRFmodel)
         switch lower(params.analysis.pRFmodel{n}),
@@ -477,8 +509,57 @@ for slice=loopSlices,
                 s{n}=rmGridFit_oneGaussianNonlinear(s{n},prediction,data,params,t);
 
             case {'cst'}
-                s{n}=rmGridFit_oneGaussianNonlinear(s{n},prediction,data,params,t);
-                  
+                prediction = tmodel.run_preds ;
+%                 sus=rmGridFit_oneGaussianNonlinear(s{1},prediction(:,:,1),data,params,t);
+%                 tran=rmGridFit_oneGaussianNonlinear(s{1},prediction(:,:,2),data,params,t);
+%                 s{n}=rmGridFit_oneGaussianNonlinear(s{n},prediction(:,:,1),data,params,t);
+
+fitFile = [params.analysis.pRFmodel{1} '_type-' params.analysis.temporal '-fitset.mat'];
+save(fitFile,'s','prediction','data','params','t','-v7.3')
+predictionFile
+
+% spatial temporal change the name
+                s{n}=rmGridFit_temporal(s{n},prediction,data,params,t);
+                
+% figure()
+% % a=prediction(:,:,1);
+% % plot(a(:,1:1000))
+% figure()
+% b=prediction(:,:,2);
+% figure()
+% plot(data)
+
+% figure()
+% a=prediction(:,s{1}.n,1);
+% b=prediction(:,s{1}.n,2);
+% 
+% plot(a); hold on
+% plot(b); hold on
+% plot(a+b); hold on
+% 
+% figure()
+% b=prediction(:,:,2);
+% figure()
+% plot(data)
+% 
+% 166447
+
+%          rss: 112.8717
+%       rawrss: 116.9028
+
+% 2d PRF
+%          rss: 10.0340
+%       rawrss: 56.4629
+% x0: 14.3644
+% y0: 2.0393
+% s: 10
+% s_major: 10
+% s_minor: 10
+
+                % 2d css
+%             rss: 10.0340
+%          rawrss: 56.4629
+                 
             otherwise
                 fprintf('[%s]:Unknown pRF model: %s: IGNORED!',mfilename,params.analysis.pRFmodel{n});
         end
@@ -487,15 +568,16 @@ for slice=loopSlices,
     %-----------------------------------
     % now put back the trends to the fits
     %-----------------------------------
-    for mm=1:numel(s),
+      
+    for mm=1:numel(s)
         nB = size(s{mm}.b,1);
         s{mm}.b(nB-ntrends+1:end,:) = s{mm}.b(nB-ntrends+1:end,:)+trendBetas;
     end
-
+    
     %-----------------------------------
     % now we put back the temporary data from that slice
     %-----------------------------------
-    model = rmSliceSet(model,s,slice);
+    model = rmSliceSet(model,s,slice);  
 end;
 
 
@@ -523,7 +605,9 @@ function model = initiateModel(params,d1,d2,nt)
 % make the model struct with rmSet
 fillwithzeros       = zeros(d1,d2);
 fillwithinfs        = ones(d1,d2).*Inf;
+   
 
+        
 % add a small number to sigmas because a pRF with 0 sigma does not exist
 smallnumber   = 0.001;
 
@@ -649,7 +733,7 @@ for n=1:numel(params.analysis.pRFmodel),
             model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
             
         case {'cst'}
-            model{n} = rmSet(model{n},'b'   ,zeros(d1,d2,nt+1));
+            model{n} = rmSet(model{n},'b'   ,zeros(d1,d2,nt+2));
             model{n} = rmSet(model{n},'desc','2D CSS nonlinear spatiotemporal pRF fit');
             model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
             
@@ -661,3 +745,4 @@ end;
 
 return;
 %-----------------------------------
+    
