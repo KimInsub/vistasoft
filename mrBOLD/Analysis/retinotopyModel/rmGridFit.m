@@ -117,7 +117,9 @@ if ~checkfields(params, 'analysis', 'nonlinear') || ~params.analysis.nonlinear
 % cst model    
 elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
     
-    predictionFile = ['./prediction-' params.analysis.temporal '.mat'];
+    predictionFile = ['./cst_seq-' params.analysis.stimseq, ...
+        '-tm-' params.analysis.temporaltype, ...
+        '_prediction.mat'];
     if ~isfile(predictionFile)
         
         allstimimages = params.analysis.allstimimages_unconvolved;
@@ -132,10 +134,9 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
         
         %%%% set temporal model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         fit_exps = {'Exp2'};
-        
         % make this so we can parse as an inputs
-        temp_type = '1ch-glm';
-        temp_type = '2ch-exp-sig';
+%         temp_type = '1ch-glm';
+        temp_type = params.analysis.temporaltype;
         dohrf = 2;   
         
      
@@ -153,21 +154,55 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
             stimirf_t_t=[];
             
             tmodel = stModel(temp_type, fit_exps,'default');
-
             tmodel.stim = cellimage(ms(mn):ms(mn+1)-1);
             
-            % temporal channel normalization
-            % need to think about ways of normalizing in the future.
-            temporal_channel_normalization=true;
-            if ~temporal_channel_normalization
-                tmodel.normT = 1;
-            end
-            
+       
             
             [tmodel.onsets, tmodel.offsets, dur] = cellfun(@cst_codestim, ...
                 tmodel.stim, 'uni', false);
             
+% % % % %             % gap implementation 
+% % % % %             sfiles = tmodel.stimfiles; [nruns_max, nsess] = size(sfiles);
+% % % % %             empty_cells = cellfun(@isempty, sfiles);
+% % % % %             fs = tmodel.fs; gd = tmodel.gap_dur;
+% % % % %             
+% % % % %             % dummy stuff for now
+% % % % %             nruns_max =size(tmodel.onsets,1);
+% % % % %             cat_list = {'all'}; tt = repmat(cat_list,1,length(tmodel.offsets{1}));
+% % % % %             
+% % % % %             im=[];
+% % % % %             for a= 1:size(tmodel.offsets,1)
+% % % % %                 im{a,1} = tt;
+% % % % %             end
+% % % % %             for cc = 1:length(cat_list)   
+% % % % %                 cat_idxs = cellfun(@(X) find(strcmp(cat_list(cc), X)), ...
+% % % % %                     im, 'uni', false);
+% % % % %                 on_idxs = cellfun(@(X, Y) round(fs * X(Y)), ...
+% % % % %                     tmodel.onsets, cat_idxs, 'uni', false); on_idxs(empty_cells) = {1};
+% % % % %                 off_idxs = cellfun(@(X, Y) round(fs * (X(Y) - gd / 2)), ...
+% % % % %                     tmodel.offsets, cat_idxs, 'uni', false); off_idxs(empty_cells) = {1};
+% % % % %                 % find frame indices of gap offset times
+% % % % %                 goff_idxs = cellfun(@(X, Y) round(fs * (X(Y) + gd / 2)), ...
+% % % % %                     tmodel.offsets, cat_idxs, 'uni', false); goff_idxs(empty_cells) = {1};
+% % % % %                 % compile all frame indices during stimuli and gaps
+% % % % %                 stim_idxs = cellfun(@code_stim_idxs, ...
+% % % % %                     on_idxs, off_idxs, 'uni', false);
+% % % % %                 gap_idxs = cellfun(@code_stim_idxs, ...
+% % % % %                     off_idxs, goff_idxs, 'uni', false);
+% % % % %                 % code stimulus as a step function with gaps at offsets
+% % % % %                 cc_x = repmat({cc}, nruns_max, nsess);
+% % % % %                 stims = cellfun(@code_stim_vec, tmodel.stim, stim_idxs, ...
+% % % % %                     cc_x, repmat({1}, nruns_max, nsess), 'uni', false);
+% % % % %                 stims = cellfun(@code_stim_vec, tmodel.stim, gap_idxs, ...
+% % % % %                     cc_x, repmat({0}, nruns_max, nsess), 'uni', false);
+% % % % %             end
+% % % % %             stims(empty_cells) = {[]}; tmodel.stim = stims;
+                        
+            
+            %%%% make IRFs
             tmodel = cst_pred_runs(tmodel,dohrf);
+            
+            
             
             %%%% transpose and sum up two channels 
             stimirf_base = cellfun(@transpose,tmodel.pixel_preds,'UniformOutput',false);
@@ -185,6 +220,11 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
             end
             
             stimirf(:,ms(mn):ms(mn+1)-1) = stimirf_base;
+            
+            if ismember(mn, round((1:10)/10* numel(ms)-1)), % every 10% draw a dot
+                fprintf(1,'(irf)');drawnow;
+            end
+            
 
         end
         
@@ -194,6 +234,64 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
         else
             tmodel.chan_preds{1} = stimirf_base;
         end
+        
+        
+        % temporal channel normalization
+        % need to think about ways of normalizing in the future.
+        temporal_channel_normalization=false;
+        if temporal_channel_normalization
+             tmodel.normT = max(max(stimirf_chan_s)) /  max(max(stimirf_chan_t));
+        else
+            tmodel.normT = 1;
+        end
+        
+        
+%         rf   = rfGaussian2d(params.analysis.X, params.analysis.Y,...
+%                 params.analysis.sigmaMajor(1), ...
+%                 params.analysis.sigmaMinor(1), ...
+%                 params.analysis.theta(1), ...
+%                 params.analysis.x0(1), ...
+%                 params.analysis.y0(1));
+%             
+%             for cc=1:tmodel.num_channels
+%                 pred = tmodel.chan_preds{cc}*rf;
+%                 
+%                 % apply css
+%                 pred = bsxfun(@power, pred, 0.5);
+%                 pred = double(pred);
+%                 
+%                 % apply hrf
+%                 pred_cell = {pred};
+%                 
+%                 % use mrvista HRF
+%                 % hrf = params.analysis.Hrf;
+%                 hrf = tmodel.irfs.hrf;
+%                 curhrf = repmat(hrf, 1, 1);
+%                 pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, tmodel.fs, 1 / tmodel.tr), ...
+%                     pred_cell, curhrf, 'uni', false);
+%                 pred_hrf = cellfun(@transpose,pred_hrf,'UniformOutput',false);
+%                 pred_hrf=cell2mat(pred_hrf)';
+%                 
+%                 
+%                 % store
+%                 prediction(:,cc) = pred_hrf;
+%                 %             prediction{n} = pred_hrf;
+%                 
+%             end
+%             maxvals = max(prediction)
+%             normTs = maxvals(1) / maxvals(2)
+%         %             prediction{n} = pred_hrf;
+%         
+
+% % %         % plot check
+% % %         
+% % % plot(tmodel.chan_preds{1})
+% % % plot(tmodel.chan_preds{2})
+% % % 
+% % % xlim([2000 6000])
+% % % ttmodel = pred_runs(tmodel);
+
+        
         toc
         clear stimirf_t stimirf_chan_s stimirf_chan_t stimirf_t_s stimirf_t_t
    
@@ -235,6 +333,10 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
                 pred_hrf = cellfun(@transpose,pred_hrf,'UniformOutput',false);
                 pred_hrf=cell2mat(pred_hrf)';
                 
+                if cc ==2
+                    pred_hrf = pred_hrf*tmodel.normT;
+                end    
+                
                 % store
                 prediction(:,s(n):s(n+1)-1,cc) = pred_hrf;
                 %             prediction{n} = pred_hrf;
@@ -247,8 +349,8 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
         end
         
         tmodel.run_preds = prediction;
-        
-        save(predictionFile,'tmodel', '-v7.3');
+        params.analysis.temporal.tmodel = tmodel;
+        save(predictionFile, 'tmodel', '-v7.3');
         
         clear n s rf pred pred_hrf pred_cell;
         fprintf(1, 'Done[%d min].\t(%s)\n', round(toc/60), datestr(now));
@@ -313,8 +415,28 @@ for slice=loopSlices,
     % stimultaneously fitting both. Due to this we cannot
     % prewhiten (we could zeropad/let the trends deal with this/not care).
     %-----------------------------------
+    
+    % [CST] for each channel level usage
+    switch lower(params.analysis.pRFmodel{1})
+        case {'cst'}
+            files = dir(sprintf('synBOLD*seq*%s*%s.mat',...
+                params.analysis.stimseq, params.analysis.temporaltype));
+            load(files.name)
+            for vv = 1:size(synBOLD{1,1},1)
+               chandata(:,:,vv) =  cell2mat(cellfun(@(X) X(vv,:), synBOLD,'UniformOutput', false)')';
+            end
+
+            % CURRENTLY< CST ONLY WORKS with SYNTH PC
+            params.analysis.calcPC=0;
+    end
+    
     [data, params] = rmLoadData(view, params, slice,...
         params.analysis.coarseToFine);
+    
+
+    
+    
+    
     % for speed convert to single and remove NaNs (should not be
     % there anyway!), 
     % We could remove NaN from data and put back later, so computations are
@@ -514,12 +636,14 @@ for slice=loopSlices,
 %                 tran=rmGridFit_oneGaussianNonlinear(s{1},prediction(:,:,2),data,params,t);
 %                 s{n}=rmGridFit_oneGaussianNonlinear(s{n},prediction(:,:,1),data,params,t);
 
-fitFile = [params.analysis.pRFmodel{1} '_type-' params.analysis.temporal '-fitset.mat'];
+fitFile = ['./cst_seq-' params.analysis.stimseq, ...
+        '-tm-' params.analysis.temporaltype, ...
+        '_fit.mat']
 save(fitFile,'s','prediction','data','params','t','-v7.3')
-predictionFile
+
 
 % spatial temporal change the name
-                s{n}=rmGridFit_temporal(s{n},prediction,data,params,t);
+                s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
                 
 % figure()
 % % a=prediction(:,:,1);

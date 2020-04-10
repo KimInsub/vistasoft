@@ -114,20 +114,28 @@ I               = subSpatialDownsample(I, params);
 switch lower(params.analysis.pRFmodel{1})
     case {'cst'}
         
-        if isfile(['cst_' params.analysis.temporal '_stim.mat'])
+        if isfile(['cst_seq-' params.analysis.stimseq '_stim.mat'])
             disp('*cst stim file exists no need to make a new one!*')
-            load(['cst_' params.analysis.temporal '_stim.mat']);
+            load(['cst_seq-' params.analysis.stimseq '_stim.mat']);
         else
-            [output, temporal] = cst_stimconvert(P.images, params.analysis.temporal, ...
+            [temporal] = cst_stimconvert(P.images, params.analysis.stimseq, ...
                  0.033 ,30, 0,[]);
-            cststim = reshape(output ,size(output,1)*size(output,2),[]);
-            save('cst_stim.mat', 'cststim','temporal','-v7.3');
+            cststim = reshape(temporal.stim, ...
+                size(temporal.stim,1)*size(temporal.stim,2),[]);
+            save(['cst_seq-' params.analysis.stimseq '_stim.mat'], ...
+                'cststim','temporal','-v7.3');
             
+            %%%% I was changing cst_stimconvert and how the file name is to
+            %%%% be saved
             
         end
         
         images = cststim;
-        
+        params.analysis.temporal.seqtype = params.analysis.stimseq;
+        params.analysis.temporal = temporal; 
+        params.analysis.temporal.temporaltype = params.analysis.temporaltype;
+
+
     otherwise
         [images, params]= subTemporalDownsample(I, P, params, id);
 

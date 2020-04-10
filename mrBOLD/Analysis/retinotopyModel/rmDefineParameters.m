@@ -985,8 +985,12 @@ for n=1:2:numel(vararg),
         case {'refine','search fit refine parameter'}
             params.analysis.fmins.refine = data;
             
-        case {'temporaltype','tt','temporal'}
-            params.analysis.temporal = data;
+        case {'stimseq'}
+            params.analysis.stimseq = data;
+            
+        case {'temporaltype'}
+            params.analysis.temporaltype = data;
+
             
         otherwise,
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...
