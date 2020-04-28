@@ -428,6 +428,19 @@ for slice=loopSlices,
           
             case {'cst', ...
                     '2d css nonlinear spatiotemporal prf fit'}
+               
+                % data without detrend
+                p2.analysis.calcPC=0;
+
+                data = rmLoadData(view,p2,slice,coarse);
+                data = single(data);
+                
+                
+%                 data(isnan(data)) = 0;
+%                 data = single(data);
+%                 tmodel.data = data;
+                % actual
+                
                 s{n}=rmSearchFit_temporal(s{n},data,params,wProcess,t);
 
             otherwise

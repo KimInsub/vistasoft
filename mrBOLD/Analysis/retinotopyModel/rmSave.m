@@ -150,7 +150,7 @@ if exist(pathStr,'file')
 end
 
 % save
-save(pathStr,'model','params');
+save(pathStr,'model','params','-v7.3');
 fprintf(1,'[%s]:Saved %s.\n',mfilename,pathStr);
 return;
 %------------------------

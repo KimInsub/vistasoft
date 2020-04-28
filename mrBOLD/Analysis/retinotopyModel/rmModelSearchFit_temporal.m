@@ -1,4 +1,4 @@
-function e = rmModelSearchFit_temporal(p,Y,Xv,Yv,stim, hrf, scan_num, t)
+function e = rmModelSearchFit_temporal(p,Y,Xv,Yv,tmodel, hrf, scan_num, t)
 % rmModelSearchFit_temporal - actual fit function of rmSearchFit
 %
 % error = rmModelSearchFit(p,Y,trends,Xgrid,YGrid,stimulusMatrix);
@@ -14,29 +14,40 @@ function e = rmModelSearchFit_temporal(p,Y,Xv,Yv,stim, hrf, scan_num, t)
 % 2010/02 SOD: evaluated lscov this did not improve performance here (using
 % profiler)
 
+% fprintf(1,'[cst] search optimization .... \n');
+
 % make RF (taken from rfGaussian2d)
 Xv = Xv - p(1);   % positive x0 moves center right
 Yv = Yv - p(2);   % positive y0 moves center up
 RF = exp( (Yv.*Yv + Xv.*Xv) ./ (-2.*(p(3).^2)) );
 
-% make prediction (taken from rfMakePrediction)
-pred = (stim*RF).^p(4);
 
-pred_cell = num2cell(pred,1)';
+%%%%% [cst]  params
+stim = tmodel.chan_preds;
+nChan = tmodel.num_channels;
 
-curhrf = repmat(hrf{1}, 1, 1);
-pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, 1000, 1), ...
-    pred_cell, hrf, 'uni', false);
+% chan == 1
+for cc = 1:nChan
+    
+    pred = (stim{cc}*RF).^p(4);
+    pred = {double(pred)};
+    
+    pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, tmodel.fs, 1 / tmodel.tr), ...
+        pred, hrf, 'uni', false);
+    pred_hrf = cellfun(@transpose,pred_hrf,'UniformOutput',false);
+    pred_hrf=cell2mat(pred_hrf)';
 
-pred_hrf = cellfun(@transpose,pred_hrf,'UniformOutput',false);
-pred_hrf=cell2mat(pred_hrf)';
+    % normalization
+    if cc ==2
+        pred_hrf = pred_hrf*tmodel.normT;
+    end
+    
+    prediction{cc} = pred_hrf;
+    
+end
+%     X    = [prediction(:,n,1) prediction(:,n,2) trends];
 
-% for scan = 1:numel(hrf)
-%     inds = scan_num == scan;
-%     pred(inds,:) = filter(hrf{scan}, 1, pred(inds,:));
-% end
-
-X = [pred_hrf t];
+X = [cell2mat(prediction) t];
 
 % fit - inlining pinv
 %b = pinv(X)*Y; 
@@ -53,13 +64,18 @@ else
 end
 b = pinvX*Y;
 
+% do for both negative and positive fits
+e = norm(Y - X*b);
+
 % compute residual sum of squares (e)
 % e = norm(Y - X*abs(b));
-if b(1)>0,
-    e = norm(Y - X*b);
-else
-    e = norm(Y).*(1+sum(abs(b(1))));
-end
+
+% 
+% if b(1)>0,
+%     e = norm(Y - X*b);
+% else
+%     e = norm(Y).*(1+sum(abs(b(1))));
+% end
 return;
 
 

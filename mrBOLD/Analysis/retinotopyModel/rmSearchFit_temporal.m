@@ -8,7 +8,8 @@ function model = rmSearchFit_temporal(model, data, params, wProcess, t)
 % 2015/02 JW: branched from rmSearchFit_oneGaussian, now includes
 %             non-linear model (see Kay et al, 2013, on Compressive
 %             Spatial Summation)
- 
+% 2020/04 KIS: added spatiotemporal
+
 % fminsearch options
 searchOptions = params.analysis.fmins.options;
 expandRange   = params.analysis.fmins.expandRange;
@@ -17,19 +18,48 @@ expandRange   = params.analysis.fmins.expandRange;
 params.analysis.X = double(params.analysis.X);
 params.analysis.Y = double(params.analysis.Y);
 
-params.analysis.allstimimages_unconvolved = double(params.analysis.allstimimages_unconvolved);
+
+% % % [cst] parameters % % %% % %% % %% % %% % %% % %% % %% % %% % %
+pred_file = ['./cst_seq-' params.analysis.stimseq, ...
+           '-tm-' params.analysis.temporaltype, ...
+           '_prediction.mat'];
+if isfile(pred_file)
+    load(pred_file); % cstmodel 
+end
+
+
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','iter'); %'none','iter','final'
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',100); % #
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
+searchOptions = params.analysis.fmins.options;
+
+% 
+%    -0.8770
+%    -1.1768
+%     5.4784
+%     2.8896
+%     3.4717
+
+% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %
+
+
+%params.analysis.allstimimages_unconvolved = double(params.analysis.allstimimages_unconvolved);
 data = double(data);
 
 % get starting upper and lower range and reset TolFun 
 % (raw rss computation (similar to norm) and TolFun adjustments)
 model.s = model.s_major;
 [range, TolFun] = rmSearchFit_range(params,model,data);
+[range, TolFun] =rmSearchFit_range_temporal(params,model,data);
+range.start(3,:) = range.lower(3,:);
 
 % amount of negative fits
 nNegFit  = 0;
 vethresh = params.analysis.fmins.vethresh;
 trends   = t.trends;
 t_id     = t.dcid+1;
+
 
 %-----------------------------------
 % Go for each voxel
@@ -64,19 +94,33 @@ for ii = 1:numel(wProcess),
     % searchOptions = optimset(searchOptions,'tolFun',optimget(params.analysis.fmins.options,'tolFun')./100.*rawrss);
     % optimset and optimget are a little slow so:
     searchOptions.TolFun = TolFun(ii);
-    
+
     % actual fitting routine
     if searchOptions.MaxIter>0
+%         outParams = ...
+%             fmincon(@(x) rmModelSearchFit_temporal(x,vData,...
+%             params.analysis.X,...
+%             params.analysis.Y,...
+%             params.analysis.allstimimages_unconvolved,...
+%             params.analysis.Hrf,... 
+%             params.analysis.scans,...
+%             trends),...
+%             range.start(:,vi),[],[],[],[],range.lower(:,vi),range.upper(:,vi),...
+%             @(x) distanceCon(x,range.start(:,vi),range.step(:,vi).*expandRange),searchOptions); 
+%            
         outParams = ...
             fmincon(@(x) rmModelSearchFit_temporal(x,vData,...
             params.analysis.X,...
             params.analysis.Y,...
-            params.analysis.allstimimages_unconvolved,...
-            params.analysis.Hrf,...
+            tmodel,...
+            tmodel.irfs.hrf,...
             params.analysis.scans,...
             trends),...
             range.start(:,vi),[],[],[],[],range.lower(:,vi),range.upper(:,vi),...
-            @(x) distanceCon(x,range.start(:,vi),range.step(:,vi).*expandRange),searchOptions);  
+            @(x) distanceCon(x,range.start(:,vi),range.step(:,vi).*expandRange),searchOptions);
+        
+        %cstmodel.tmodel.irfs.hrf
+
     else
         outParams = range.start(:,vi);
     end
@@ -88,13 +132,34 @@ for ii = 1:numel(wProcess),
     Yv = params.analysis.Y-outParams(2);
     n  = outParams(4);
     rf = exp( (Yv.*Yv + Xv.*Xv) ./ (-2.*(outParams(3).^2)) );
-    pred = (params.analysis.allstimimages_unconvolved * rf).^ n;
-    for scan = 1:numel(params.stim)
-        inds = params.analysis.scans == scan;
-        pred(inds) = filter(params.analysis.Hrf{scan}, 1, pred(inds));
-    end
+    
+    
+    %%%%% [cst]  params
+    stim = tmodel.chan_preds;
+    nChan = tmodel.num_channels;
+    hrf = tmodel.irfs.hrf;
+    % chan == 1
+    for cc = 1:nChan
         
-    X  = [pred trends];
+        pred = (stim{cc}*rf).^n;
+        pred = {double(pred)};
+        
+        pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, tmodel.fs, 1 / tmodel.tr), ...
+            pred, hrf, 'uni', false);
+        pred_hrf = cellfun(@transpose,pred_hrf,'UniformOutput',false);
+        pred_hrf=cell2mat(pred_hrf)';
+        
+        % normalization
+        if cc ==2
+            pred_hrf = pred_hrf*tmodel.normT;
+        end
+        
+        prediction{cc} = pred_hrf;
+        
+    end
+    
+
+    X  = [cell2mat(prediction) trends];
     b    = pinv(X)*vData;
     rss  = norm(vData-X*b).^2;
 

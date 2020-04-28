@@ -623,7 +623,9 @@ params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter'
 % Precision of output (degrees). That is, stop if the estimate is
 % within TolX degrees:
 % GLU params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
-    params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-8); % degrees
+
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-8); % degrees
+    
 
 
 
@@ -631,7 +633,7 @@ params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter'
 % relative to the initial raw 'no-fit' data RMS. So, 1 means
 % stop if there is less than 1% improvement on the fit:
 % GLU params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-2); % degrees
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-2); % degrees
 
 % Variance-explained threshold above which to do search.
 % This limits the search algorithms to voxels that will have 'good' data.
@@ -643,6 +645,13 @@ params.analysis.fmins.expandRange = 5;
 
 % Specific search options to only refine certain parameters.
 params.analysis.fmins.refine = 'all';
+
+%+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','iter'); %'none','iter','final'
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',50); % #
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 %--------------------------------------------------------------------------
 %--- user defined params

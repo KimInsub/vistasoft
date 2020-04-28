@@ -245,53 +245,6 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
             tmodel.normT = 1;
         end
         
-        
-%         rf   = rfGaussian2d(params.analysis.X, params.analysis.Y,...
-%                 params.analysis.sigmaMajor(1), ...
-%                 params.analysis.sigmaMinor(1), ...
-%                 params.analysis.theta(1), ...
-%                 params.analysis.x0(1), ...
-%                 params.analysis.y0(1));
-%             
-%             for cc=1:tmodel.num_channels
-%                 pred = tmodel.chan_preds{cc}*rf;
-%                 
-%                 % apply css
-%                 pred = bsxfun(@power, pred, 0.5);
-%                 pred = double(pred);
-%                 
-%                 % apply hrf
-%                 pred_cell = {pred};
-%                 
-%                 % use mrvista HRF
-%                 % hrf = params.analysis.Hrf;
-%                 hrf = tmodel.irfs.hrf;
-%                 curhrf = repmat(hrf, 1, 1);
-%                 pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, tmodel.fs, 1 / tmodel.tr), ...
-%                     pred_cell, curhrf, 'uni', false);
-%                 pred_hrf = cellfun(@transpose,pred_hrf,'UniformOutput',false);
-%                 pred_hrf=cell2mat(pred_hrf)';
-%                 
-%                 
-%                 % store
-%                 prediction(:,cc) = pred_hrf;
-%                 %             prediction{n} = pred_hrf;
-%                 
-%             end
-%             maxvals = max(prediction)
-%             normTs = maxvals(1) / maxvals(2)
-%         %             prediction{n} = pred_hrf;
-%         
-
-% % %         % plot check
-% % %         
-% % % plot(tmodel.chan_preds{1})
-% % % plot(tmodel.chan_preds{2})
-% % % 
-% % % xlim([2000 6000])
-% % % ttmodel = pred_runs(tmodel);
-
-        
         toc
         clear stimirf_t stimirf_chan_s stimirf_chan_t stimirf_t_s stimirf_t_t
    
@@ -349,7 +302,7 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
         end
         
         tmodel.run_preds = prediction;
-        params.analysis.temporal.tmodel = tmodel;
+%         params.analysis.temporal.tmodel = tmodel;
         save(predictionFile, 'tmodel', '-v7.3');
         
         clear n s rf pred pred_hrf pred_cell;
@@ -428,6 +381,22 @@ for slice=loopSlices,
 
             % CURRENTLY< CST ONLY WORKS with SYNTH PC
             params.analysis.calcPC=0;
+            
+            % do single
+%             tmodel.pixel_preds = ...
+%                 cellfun(@(x) single(x),tmodel.pixel_preds,'UniformOutput',false);
+%             tmodel.chan_preds = ...
+%                 cellfun(@(x) single(x),tmodel.chan_preds,'UniformOutput',false);
+
+%             params.analysis.temporal.tmodel = tmodel;
+            params.analysis.doDetrend = 0;
+            
+             
+            [data, params] = rmLoadData(view, params, slice,...
+                params.analysis.coarseToFine);
+            data(isnan(data)) = 0;
+            data = single(data);
+            tmodel.data = data;
     end
     
     [data, params] = rmLoadData(view, params, slice,...
@@ -466,7 +435,7 @@ for slice=loopSlices,
     %end
     
     %%%%% don't do this for single pulse
-    if size(data,1) > 30
+    if params.analysis.doDetrend
         data = data - trends*trendBetas;
     end
     
@@ -631,19 +600,25 @@ for slice=loopSlices,
                 s{n}=rmGridFit_oneGaussianNonlinear(s{n},prediction,data,params,t);
 
             case {'cst'}
-                prediction = tmodel.run_preds ;
-%                 sus=rmGridFit_oneGaussianNonlinear(s{1},prediction(:,:,1),data,params,t);
-%                 tran=rmGridFit_oneGaussianNonlinear(s{1},prediction(:,:,2),data,params,t);
-%                 s{n}=rmGridFit_oneGaussianNonlinear(s{n},prediction(:,:,1),data,params,t);
 
 fitFile = ['./cst_seq-' params.analysis.stimseq, ...
-        '-tm-' params.analysis.temporaltype, ...
-        '_fit.mat']
-save(fitFile,'s','prediction','data','params','t','-v7.3')
+    '-tm-' params.analysis.temporaltype, ...
+    '_fit.mat'];
+
+data = tmodel.data;
+prediction = tmodel.run_preds ;
+
+s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
+fitresult = s{n};
+tmodel.gridfit = fitresult;
 
 
+    if ~isfile(fitFile)
+        save(fitFile,'s','tmodel','t','params','-v7.3') % save params not needed lateron
+    end
 % spatial temporal change the name
-                s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
+%                 s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
+
                 
 % figure()
 % % a=prediction(:,:,1);
