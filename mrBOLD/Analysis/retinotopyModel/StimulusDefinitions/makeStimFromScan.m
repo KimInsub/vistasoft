@@ -112,28 +112,28 @@ I               = subSpatialDownsample(I, params);
 
 % Temporally downsample to 1 image per TR (by averaging filtered images)
 switch lower(params.analysis.pRFmodel{1})
-    case {'cst'}
+    case {'st'}
         
-        if isfile(['cst_seq-' params.analysis.stimseq '_stim.mat'])
+        if isfile(['st_seq-' params.analysis.stimseq '_stim.mat'])
             disp('*cst stim file exists no need to make a new one!*')
-            load(['cst_seq-' params.analysis.stimseq '_stim.mat']);
+            load(['st_seq-' params.analysis.stimseq '_stim.mat']);
         else
-            [temporal] = cst_stimconvert(P.images, params.analysis.stimseq, ...
-                 0.033 ,30, 0,[]);
-            cststim = reshape(temporal.stim, ...
+            [temporal] = st_stimconvert(P.images, params.analysis.stimseq, ...
+                 0.033 ,30);
+            spaceTime_stim = reshape(temporal.stim, ...
                 size(temporal.stim,1)*size(temporal.stim,2),[]);
-            save(['cst_seq-' params.analysis.stimseq '_stim.mat'], ...
-                'cststim','temporal','-v7.3');
+            save(['st_seq-' params.analysis.stimseq '_stim.mat'], ...
+                'spaceTime_stim','temporal','-v7.3');
             
             %%%% I was changing cst_stimconvert and how the file name is to
             %%%% be saved
             
         end
         
-        images = cststim;
+        images = spaceTime_stim;
         params.analysis.temporal.seqtype = params.analysis.stimseq;
         params.analysis.temporal = temporal; 
-        params.analysis.temporal.temporaltype = params.analysis.temporaltype;
+        params.analysis.temporal.temporalModel = params.analysis.temporalModel;
 
 
     otherwise

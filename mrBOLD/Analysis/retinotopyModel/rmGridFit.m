@@ -115,28 +115,26 @@ if ~checkfields(params, 'analysis', 'nonlinear') || ~params.analysis.nonlinear
     drawnow;
     
 % cst model    
-elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
+elseif strcmp(params.analysis.pRFmodel{1}, 'st')
     
-    predictionFile = ['./cst_seq-' params.analysis.stimseq, ...
-        '-tm-' params.analysis.temporaltype, ...
+    predictionFile = ['./st_seq-' params.analysis.stimseq, ...
+        '-tm-' params.analysis.temporalModel, ...
         '_prediction.mat'];
     if ~isfile(predictionFile)
         
         allstimimages = params.analysis.allstimimages_unconvolved;
-%         save('allstimimages.mat','allstimimages','-v7.3')
         fprintf(1,'[%s]:Making %d model samples:',mfilename,n);
         drawnow;tic;
         
-        %%%% convert back to ones %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%% make it as cell %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        allstimimages(find(allstimimages)) = 1;
+%         allstimimages(find(allstimimages)) = 1;
         cellimage = num2cell(allstimimages,1)';
         
         %%%% set temporal model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         fit_exps = {'Exp2'};
         % make this so we can parse as an inputs
 %         temp_type = '1ch-glm';
-        temp_type = params.analysis.temporaltype;
+        temp_type = params.analysis.temporalModel;
         dohrf = 2;   
         
      
@@ -158,49 +156,12 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'cst')
             
        
             
-            [tmodel.onsets, tmodel.offsets, dur] = cellfun(@cst_codestim, ...
+            [tmodel.onsets, tmodel.offsets, dur] = cellfun(@st_codestim, ...
                 tmodel.stim, 'uni', false);
-            
-% % % % %             % gap implementation 
-% % % % %             sfiles = tmodel.stimfiles; [nruns_max, nsess] = size(sfiles);
-% % % % %             empty_cells = cellfun(@isempty, sfiles);
-% % % % %             fs = tmodel.fs; gd = tmodel.gap_dur;
-% % % % %             
-% % % % %             % dummy stuff for now
-% % % % %             nruns_max =size(tmodel.onsets,1);
-% % % % %             cat_list = {'all'}; tt = repmat(cat_list,1,length(tmodel.offsets{1}));
-% % % % %             
-% % % % %             im=[];
-% % % % %             for a= 1:size(tmodel.offsets,1)
-% % % % %                 im{a,1} = tt;
-% % % % %             end
-% % % % %             for cc = 1:length(cat_list)   
-% % % % %                 cat_idxs = cellfun(@(X) find(strcmp(cat_list(cc), X)), ...
-% % % % %                     im, 'uni', false);
-% % % % %                 on_idxs = cellfun(@(X, Y) round(fs * X(Y)), ...
-% % % % %                     tmodel.onsets, cat_idxs, 'uni', false); on_idxs(empty_cells) = {1};
-% % % % %                 off_idxs = cellfun(@(X, Y) round(fs * (X(Y) - gd / 2)), ...
-% % % % %                     tmodel.offsets, cat_idxs, 'uni', false); off_idxs(empty_cells) = {1};
-% % % % %                 % find frame indices of gap offset times
-% % % % %                 goff_idxs = cellfun(@(X, Y) round(fs * (X(Y) + gd / 2)), ...
-% % % % %                     tmodel.offsets, cat_idxs, 'uni', false); goff_idxs(empty_cells) = {1};
-% % % % %                 % compile all frame indices during stimuli and gaps
-% % % % %                 stim_idxs = cellfun(@code_stim_idxs, ...
-% % % % %                     on_idxs, off_idxs, 'uni', false);
-% % % % %                 gap_idxs = cellfun(@code_stim_idxs, ...
-% % % % %                     off_idxs, goff_idxs, 'uni', false);
-% % % % %                 % code stimulus as a step function with gaps at offsets
-% % % % %                 cc_x = repmat({cc}, nruns_max, nsess);
-% % % % %                 stims = cellfun(@code_stim_vec, tmodel.stim, stim_idxs, ...
-% % % % %                     cc_x, repmat({1}, nruns_max, nsess), 'uni', false);
-% % % % %                 stims = cellfun(@code_stim_vec, tmodel.stim, gap_idxs, ...
-% % % % %                     cc_x, repmat({0}, nruns_max, nsess), 'uni', false);
-% % % % %             end
-% % % % %             stims(empty_cells) = {[]}; tmodel.stim = stims;
-                        
+       
             
             %%%% make IRFs
-            tmodel = cst_pred_runs(tmodel,dohrf);
+            tmodel = st_pred_runs(tmodel,dohrf);
             
             
             
@@ -371,13 +332,13 @@ for slice=loopSlices,
     
     % [CST] for each channel level usage
     switch lower(params.analysis.pRFmodel{1})
-        case {'cst'}
-            files = dir(sprintf('synBOLD*seq*%s*%s.mat',...
-                params.analysis.stimseq, params.analysis.temporaltype));
-            load(files.name)
-            for vv = 1:size(synBOLD{1,1},1)
-               chandata(:,:,vv) =  cell2mat(cellfun(@(X) X(vv,:), synBOLD,'UniformOutput', false)')';
-            end
+        case {'st'}
+%             files = dir(sprintf('synBOLD*seq*%s*%s.mat',...
+%                 params.analysis.stimseq, params.analysis.temporalModel));
+%             load(files.name)
+%             for vv = 1:size(synBOLD{1,1},1)
+%                chandata(:,:,vv) =  cell2mat(cellfun(@(X) X(vv,:), synBOLD,'UniformOutput', false)')';
+%             end
 
             % CURRENTLY< CST ONLY WORKS with SYNTH PC
             params.analysis.calcPC=0;
@@ -435,9 +396,9 @@ for slice=loopSlices,
     %end
     
     %%%%% don't do this for single pulse
-    if params.analysis.doDetrend
-        data = data - trends*trendBetas;
-    end
+%     if params.analysis.doDetrend
+data = data - trends*trendBetas;
+%     end
     
     % reset DC component by specific data-period (if requested)
     if params.analysis.dc.datadriven
@@ -501,7 +462,7 @@ for slice=loopSlices,
         t.trends = trends(:,dcid);
         t.dcid   = dcid;       
     end
-
+    
     % Run the grid fit estimate for this slice, s{}.
     for n=1:numel(params.analysis.pRFmodel)
         switch lower(params.analysis.pRFmodel{n}),
@@ -520,7 +481,7 @@ for slice=loopSlices,
                 t.trends = trends;
                 t.dcid   = 1:size(trends,2);
                 s{n}=rmGridFit_oneGaussianLink(s{n},prediction,data,params,t,view);
-            
+                
             case {'addgaussian','add one gaussian'}
                 [residuals s{n}] = rmComputeResiduals(view,params,s{n},slice,[true params.analysis.coarseDecimate>1]);
                 t.dcid = t.dcid + 1;
@@ -536,16 +497,16 @@ for slice=loopSlices,
                 
             case {'onegaussianunsigned','one gaussian unsigned','unsigned'}
                 s{n}=rmGridFit_oneGaussianUnsigned(s{n},prediction,data,params,t);
-
+                
             case {'twogaussianstog','tog','two gaussians on the same position'}
                 s{n}=rmGridFit_twoGaussiansToG(s{n},prediction,data,params,t);
-
+                
             case {'twogaussiansdog','dog','difference of gaussians'}
                 s{n}=rmGridFit_twoGaussiansDoG(s{n},prediction,data,params,t);
-
+                
             case {'two1dgaussiansdog','1ddog','1d dog','1d difference of gaussians'}
                 s{n}=rmGridFit_twoGaussiansDoG(s{n},prediction,data,params,t);
-
+                
             case {'twogaussiansdogfixed','dogf','difference of gaussians fixed'}
                 % remake predictions using sigmaRatio and betaRatio
                 ii = numel(params.analysis.x0);
@@ -579,7 +540,7 @@ for slice=loopSlices,
                 drawnow;
                 
                 s{n}=rmGridFit_oneGaussian(s{n},prediction,data,params,t);
-
+                
             case {'twogaussiansdogbetafixed','dogbf','difference of gaussians beta fixed'}
                 s{n}=rmGridFit_twoGaussiansDoGbetafixed(s{n},prediction,data,params,t);
                 
@@ -588,77 +549,35 @@ for slice=loopSlices,
                 
             case {'twogaussiansmirror','two gaussians mirrored','mirror'}
                 s{n}=rmGridFit_twoGaussiansMirror(s{n},params.analysis.mirror,data,params,t);
-                 
-			case {'shiftedgaussians','two shifted gaussians'}
-				s{n}=rmGridFit_shiftedGaussians(s{n},params.analysis.pRFshift,data,params,t);
-
-
+                
+            case {'shiftedgaussians','two shifted gaussians'}
+                s{n}=rmGridFit_shiftedGaussians(s{n},params.analysis.pRFshift,data,params,t);
+                
+                
             case {'oneovalgaussian','one oval gaussian','one oval gaussian without theta'}
                 s{n}=rmGridFit_oneOvalGaussian(s{n},prediction,data,params,t);
                 
             case {'css' 'onegaussiannonlinear', 'onegaussianexponent' }
                 s{n}=rmGridFit_oneGaussianNonlinear(s{n},prediction,data,params,t);
-
-            case {'cst'}
-
-fitFile = ['./cst_seq-' params.analysis.stimseq, ...
-    '-tm-' params.analysis.temporaltype, ...
-    '_fit.mat'];
-
-data = tmodel.data;
-prediction = tmodel.run_preds ;
-
-s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
-fitresult = s{n};
-tmodel.gridfit = fitresult;
-
-
-    if ~isfile(fitFile)
-        save(fitFile,'s','tmodel','t','params','-v7.3') % save params not needed lateron
-    end
-% spatial temporal change the name
-%                 s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
-
                 
-% figure()
-% % a=prediction(:,:,1);
-% % plot(a(:,1:1000))
-% figure()
-% b=prediction(:,:,2);
-% figure()
-% plot(data)
-
-% figure()
-% a=prediction(:,s{1}.n,1);
-% b=prediction(:,s{1}.n,2);
-% 
-% plot(a); hold on
-% plot(b); hold on
-% plot(a+b); hold on
-% 
-% figure()
-% b=prediction(:,:,2);
-% figure()
-% plot(data)
-% 
-% 166447
-
-%          rss: 112.8717
-%       rawrss: 116.9028
-
-% 2d PRF
-%          rss: 10.0340
-%       rawrss: 56.4629
-% x0: 14.3644
-% y0: 2.0393
-% s: 10
-% s_major: 10
-% s_minor: 10
-
-                % 2d css
-%             rss: 10.0340
-%          rawrss: 56.4629
-                 
+            case {'st'}
+                
+                fitFile = ['./st_seq-' params.analysis.stimseq, ...
+                    '-tm-' params.analysis.temporalModel, ...
+                    '_fit.mat'];
+                
+                data = tmodel.data;
+                prediction = tmodel.run_preds ;
+                
+                s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
+                fitresult = s{n};
+                tmodel.gridfit = fitresult;
+                
+                
+                if ~isfile(fitFile)
+                    save(fitFile,'s','tmodel','t','params','-v7.3') % save params not needed lateron
+                end
+                
             otherwise
                 fprintf('[%s]:Unknown pRF model: %s: IGNORED!',mfilename,params.analysis.pRFmodel{n});
         end
@@ -831,7 +750,7 @@ for n=1:numel(params.analysis.pRFmodel),
             model{n} = rmSet(model{n},'desc','2D nonlinear pRF fit with boxcar (x,y,sigma,exponent, positive only)');
             model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
             
-        case {'cst'}
+        case {'st'}
             model{n} = rmSet(model{n},'b'   ,zeros(d1,d2,nt+2));
             model{n} = rmSet(model{n},'desc','2D CSS nonlinear spatiotemporal pRF fit');
             model{n} = rmSet(model{n},'exponent', fillwithzeros+1);

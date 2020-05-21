@@ -178,7 +178,7 @@ end
 
 % if the model has a nonlinearity, then store this explicitly
 switch lower(params.analysis.pRFmodel{1})
-    case {'onegaussiannonlinear' 'css' 'onegaussiannonlinearboxcar' 'cssboxcar','cst'}
+    case {'onegaussiannonlinear' 'css' 'onegaussiannonlinearboxcar' 'cssboxcar','st'}
         params.analysis.nonlinear = true;
 end
         
@@ -382,13 +382,16 @@ end
 
 % 'cst' specific before creating grid
 switch lower(params.analysis.pRFmodel{1})
-    case {'cst'}
+    case {'st'}
         % each grid step becomes larger (0.6) comapared to previous
         % params.analysis.maxRF step size
-        params.analysis.maxRF = params.analysis.fieldSize + 10; % if you want even bigger prf
+        
+        % if you want even bigger prf
+%         params.analysis.maxRF = params.analysis.fieldSize + 10; 
         params.analysis.maxRF = params.analysis.fieldSize;
         params.analysis.coarseDecimate = 0;
         params.analysis.nonlinear = true;
+%         params.matFileName =params.analysis.pRFmodel;
 
 end
 
@@ -503,11 +506,11 @@ switch params.analysis.pRFmodel{1}
         params.analysis.sigmaMinor  = params.analysis.sigmaMajor;
         params.analysis.theta       = params.analysis.sigmaMajor * 0;
     
-    case {'cst'}
+    case {'st'}
         % The number of exponents for nonlinear model (pred = (stim*prf)^exponent)
         
-        % I just go with 2 exponents for now to save time %%%%%%%%%%%
-        params.analysis.numberExponents = 2 ;
+        % without CSS for now %%%%%%%%%%%
+        params.analysis.numberExponents = 1 ;
         
         numberOfGridPoints          = length(keep);
         
@@ -520,7 +523,7 @@ switch params.analysis.pRFmodel{1}
         
         % 24 unqiue steps here
         params.analysis.sigmaMajor  = repmat(flipud(z(keep)),(params.analysis.numberExponents),1); 
-        params.analysis.sigmaMajor  = params.analysis.sigmaMajor .* sqrt(params.analysis.exponent);
+%         params.analysis.sigmaMajor  = params.analysis.sigmaMajor .* sqrt(params.analysis.exponent);
         params.analysis.sigmaMinor  = params.analysis.sigmaMajor;
         params.analysis.theta       = params.analysis.sigmaMajor * 0;
 
@@ -647,7 +650,7 @@ params.analysis.fmins.expandRange = 5;
 params.analysis.fmins.refine = 'all';
 
 %+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','iter'); %'none','iter','final'
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',50); % #
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
@@ -997,8 +1000,8 @@ for n=1:2:numel(vararg),
         case {'stimseq'}
             params.analysis.stimseq = data;
             
-        case {'temporaltype'}
-            params.analysis.temporaltype = data;
+        case {'temporalmodel'}
+            params.analysis.temporalModel = data;
 
             
         otherwise,

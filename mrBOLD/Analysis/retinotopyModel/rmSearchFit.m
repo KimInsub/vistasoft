@@ -426,7 +426,7 @@ for slice=loopSlices,
                     '2d nonlinear prf fit (x,y,sigma,exponent, positive only)'}
                 s{n}=rmSearchFit_oneGaussianNonlinear(s{n},data,params,wProcess,t);
           
-            case {'cst', ...
+            case {'st', ...
                     '2d css nonlinear spatiotemporal prf fit'}
                
                 % data without detrend
