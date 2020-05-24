@@ -28,7 +28,7 @@ if isfile(pred_file)
 end
 
 
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','iter'); %'none','iter','final'
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',100); % #
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
@@ -50,8 +50,8 @@ data = double(data);
 % get starting upper and lower range and reset TolFun 
 % (raw rss computation (similar to norm) and TolFun adjustments)
 model.s = model.s_major;
-[range, TolFun] = rmSearchFit_range(params,model,data);
-[range, TolFun] =rmSearchFit_range_temporal(params,model,data);
+% [range, TolFun] = rmSearchFit_range(params,model,data);
+[range, TolFun] = rmSearchFit_range_temporal(params,model,data);
 range.start(3,:) = range.lower(3,:);
 
 % amount of negative fits
@@ -167,23 +167,44 @@ for ii = 1:numel(wProcess),
     % outputs negative fits. If the fit is negative keep old (grid) fit. We
     % do adjust the rss, so it won't be accidentally counted as a 'good'
     % fit. 
-    if b(1)>0,
-        model.x0(vi)         = outParams(1);
-        model.y0(vi)         = outParams(2);
-        model.s(vi)          = outParams(3);
-        model.s_major(vi)    = outParams(3);
-        model.s_minor(vi)    = outParams(3);
-        model.s_theta(vi)    = 0;
-        model.exponent(vi)   = outParams(4);
-        model.rss(vi)        = rss;
-        model.b([1 2 t_id],vi) = b;
-    else
-        % change the percent variance explained to be just under the
-        % current vethresh. So it counts as a 'coarse'-fit but can still be
-        % included in later 'fine'-fits
-        model.rss(vi)  = (1-max((vethresh-0.01),0)).*model.rawrss(vi);
-        nNegFit = nNegFit + 1;
+    if length(tmodel.chan_preds) == 1
+        if b(1)>0
+            model.x0(vi)         = outParams(1);
+            model.y0(vi)         = outParams(2);
+            model.s(vi)          = outParams(3);
+            model.s_major(vi)    = outParams(3);
+            model.s_minor(vi)    = outParams(3);
+            model.s_theta(vi)    = 0;
+            model.exponent(vi)   = outParams(4);
+            model.rss(vi)        = rss;
+            model.b([1 2 t_id],vi) = b;
+        else
+            % change the percent variance explained to be just under the
+            % current vethresh. So it counts as a 'coarse'-fit but can still be
+            % included in later 'fine'-fits
+            model.rss(vi)  = (1-max((vethresh-0.01),0)).*model.rawrss(vi);
+            nNegFit = nNegFit + 1;
+        end
+    elseif length(tmodel.chan_preds) == 2
+        if b(1)>0 && b(2)>0
+            model.x0(vi)         = outParams(1);
+            model.y0(vi)         = outParams(2);
+            model.s(vi)          = outParams(3);
+            model.s_major(vi)    = outParams(3);
+            model.s_minor(vi)    = outParams(3);
+            model.s_theta(vi)    = 0;
+            model.exponent(vi)   = outParams(4);
+            model.rss(vi)        = rss;
+            model.b([1 2 t_id],vi) = b;
+        else
+            % change the percent variance explained to be just under the
+            % current vethresh. So it counts as a 'coarse'-fit but can still be
+            % included in later 'fine'-fits
+            model.rss(vi)  = (1-max((vethresh-0.01),0)).*model.rawrss(vi);
+            nNegFit = nNegFit + 1;
+        end
     end
+        
 end
 
 % end time monitor

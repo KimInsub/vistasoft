@@ -572,12 +572,12 @@ data = data - trends*trendBetas;
                 s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
                 fitresult = s{n};
                 tmodel.gridfit = fitresult;
+%                 save(fitFile,'s','tmodel','t','params','-v7.3') % save params not needed lateron
                 
-                
-                if ~isfile(fitFile)
-                    save(fitFile,'s','tmodel','t','params','-v7.3') % save params not needed lateron
-                end
-                
+%                 if ~isfile(fitFile)
+%                     
+%                 end
+%                 
             otherwise
                 fprintf('[%s]:Unknown pRF model: %s: IGNORED!',mfilename,params.analysis.pRFmodel{n});
         end
