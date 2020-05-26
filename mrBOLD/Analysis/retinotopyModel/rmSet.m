@@ -149,6 +149,10 @@ switch lower(param),
 	case {'n','npoints','number of data points'}
 		model.npoints         = val;
 
+        
+    case {'exponent'}
+        model.exponent = val;
+        
 	otherwise,
 		error('Unknown parameter: %s',param);
 

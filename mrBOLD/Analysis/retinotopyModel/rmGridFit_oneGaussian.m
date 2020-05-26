@@ -76,6 +76,7 @@ for n=1:numel(params.analysis.x0),
     %--- store data with lower rss
     %-----------------------------------
     minRssIndex = (rss < model.rss);  % This is where we use model.rss
+    stopidx(n,:) = minRssIndex * n;
 
     % now update model parameters for those cases in which the computed rss
     % is smaller than the input model.rss
@@ -89,6 +90,9 @@ for n=1:numel(params.analysis.x0),
     model.b([1 t_id],minRssIndex) = b(:,minRssIndex);
 end
 
+stopidx = max(stopidx);
+pred_X = prediction(:,stopidx,:);
+model.pred_X = pred_X;
 %warning('on', 'MATLAB:lscov:RankDefDesignMat')
 
 % Under some conditions, the grid fit never returns an acceptable fit, For

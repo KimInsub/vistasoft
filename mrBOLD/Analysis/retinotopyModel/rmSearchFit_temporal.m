@@ -26,13 +26,13 @@ pred_file = ['./st_seq-' params.analysis.stimseq, ...
 if isfile(pred_file)
     load(pred_file); % cstmodel 
 end
-
-
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',100); % #
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
-searchOptions = params.analysis.fmins.options;
+% 
+% 
+% params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
+% params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',10); % #
+% params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
+% params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
+% searchOptions = params.analysis.fmins.options;
 
 % 
 %    -0.8770
