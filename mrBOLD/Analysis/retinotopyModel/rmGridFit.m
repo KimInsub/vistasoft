@@ -58,6 +58,42 @@ params.analysis.sigmaRatioMaxVal = single(params.analysis.sigmaRatioMaxVal);
 %    trends = [trends single(rmDecimate(params.analysis.allnuisance,params.analysis.coarseDecimate))];
 %end
 
+
+
+
+% [CST] for each channel level usage
+switch lower(params.analysis.pRFmodel{1})
+    case {'st'}
+        
+        % Development purpose
+        params.analysis.calcPC = 0;
+        params.analysis.doDetrend = 1;
+        params.analysis.coarseDecimate = 1;
+
+        params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
+        params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',100); % #
+        params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
+        params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
+        
+        %             fitFile = ['./st_seq-' params.analysis.stimseq, ...
+        %                 '-tm-' params.analysis.temporalModel, ...
+        %                 '_fit.mat'];
+        
+    otherwise
+        params.analysis.calcPC = 0;
+        params.analysis.coarseDecimate = 1;
+        %
+        
+        params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',100); % #
+        params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
+        params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
+
+        
+        
+end
+
+
+
 %-----------------------------------
 %--- now loop over slices
 %--- but initiate stuff first
@@ -404,29 +440,7 @@ for slice=loopSlices,
     % stimultaneously fitting both. Due to this we cannot
     % prewhiten (we could zeropad/let the trends deal with this/not care).
     %-----------------------------------
-    
-    % [CST] for each channel level usage
-    switch lower(params.analysis.pRFmodel{1})
-        case {'st'}
-            
-            % Development purpose
-            params.analysis.calcPC = 0;
-            params.analysis.doDetrend = 1;
-                   
-            params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
-            params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',10); % #
-            params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
-            params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
-            
-%             fitFile = ['./st_seq-' params.analysis.stimseq, ...
-%                 '-tm-' params.analysis.temporalModel, ...
-%                 '_fit.mat'];
-%             
-            
-        
-        
-
-    end
+ 
     
     [data, params] = rmLoadData(view, params, slice,...
         params.analysis.coarseToFine);
@@ -464,9 +478,7 @@ for slice=loopSlices,
     %end
     
     %%%%% don't do this for single pulse
-    if params.analysis.doDetrend
-        data = data - trends*trendBetas;
-    end
+    data = data - trends*trendBetas;
     
     % reset DC component by specific data-period (if requested)
     if params.analysis.dc.datadriven
@@ -678,6 +690,10 @@ rawdata = single(data);
 trends = single(trends);
 trendBetas = pinv(trends)*data;
 data = data - trends*trendBetas;
+
+rawdata   = rmDecimate(rawdata,params.analysis.coarseDecimate);
+data   = rmDecimate(data,params.analysis.coarseDecimate);
+trends = rmDecimate(trends,params.analysis.coarseDecimate);
 
 tc.rawdata = rawdata;
 tc.data = data;

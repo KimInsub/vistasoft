@@ -110,7 +110,9 @@ params.matFileName = {rmFile params.matFileName{:}};
 % parameters.
 % actually we are going to load it so we can use the "grid" to confine our
 % nonlinear minimization.
+
 tmp = load(rmFile);
+% tmp = load('/Users/insubkim/Documents/experiment/spatiotemporal/cstmodel/simulations/st_120b1_2ch-exp-sig/Inplane/Original/tmpResults-gFit.mat')
 model = tmp.model;
 
 % roi check
@@ -271,6 +273,15 @@ for slice=loopSlices,
     %-----------------------------------
     % we get all the data
     p2 = params; p2.wData = 'all'; coarse   = false;
+    
+    
+    %-----------------------------------
+    % Development Stage
+    %-----------------------------------
+    p2.analysis.calcPC=0;
+    
+    
+    
     data     = rmLoadData(view,p2,slice,coarse);
     
     % check to see that all t-series data contain finite numbers
@@ -429,11 +440,9 @@ for slice=loopSlices,
             case {'st', ...
                     '2d css nonlinear spatiotemporal prf fit'}
                
-                % data without detrend
-                p2.analysis.calcPC=0;
+                % data without detren
 
-                data = rmLoadData(view,p2,slice,coarse);
-                data = single(data);
+             
                 
                 
 %                 data(isnan(data)) = 0;
@@ -463,13 +472,66 @@ for slice=loopSlices,
     model = rmSliceSet(model,s,slice);
 end;
 
+
+
+%-----------------------------------
+% get Timecouse results
+%-----------------------------------
+
+%-----------------------------------
+% get Timecouse results
+%-----------------------------------
+
+data     = rmLoadData(view,p2,slice,coarse);    
+tmp      = sum(data(:,wProcess));
+ok       = ~isnan(tmp);
+wProcess = wProcess(ok); clear tmp ok;
+    
+% limit to voxels that will be processed
+data     = data(:,wProcess);
+rawdata = data;
+
+% detrend
+trendBetas = pinv(single(trends))*data;
+data       = data - trends*trendBetas;
+    
+tc.rawdata = rawdata;
+tc.data = data;
+tc.trends = trends;
+tc.beta = model{1}.beta;
+
+for mm = 1:numel(s)
+    
+    pp = s{mm}.pred_X;
+    bb = squeeze(tc.beta(mm,:,:));
+    bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
+    predictors = [];
+    for i = 1:size(pp,2)
+        predictors{i} = [squeeze(pp(:,i,:))  tc.trends];
+    end
+    predictors = predictors';
+    tc.X{mm} = predictors;
+    tc.result_tc{mm} =s{mm}.pred_X;
+    tc.result_beta_tc{mm} = cell2mat(cellfun(@(x,y) x*y, predictors,bb, 'UniformOutput',false)');
+    
+    res = tc.rawdata - tc.result_beta_tc{mm};
+    res_var = sum(res .^ 2) ./ sum((tc.rawdata - mean(tc.rawdata)) .^ 2);
+    tc.varexp{mm} = 1 - res_var;
+
+end
+
+
+
+
+
 %-----------------------------------
 % save
 %-----------------------------------
 for n=1:numel(model),
     model{n} = rmSet(model{n},'coords',[]);
 end;
-output = rmSave(view,model,params,1,stage);
+output = rmSave(view,model,params,1,stage,tc);
+
 view   = viewSet(view,'rmFile',output);
 
 % that's it

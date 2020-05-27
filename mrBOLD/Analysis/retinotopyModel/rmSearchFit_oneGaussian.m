@@ -109,6 +109,7 @@ for ii = 1:numel(wProcess),
         model.s_theta(vi)    = 0;
         model.rss(vi)  = rss;
         model.b([1 t_id],vi)  = b;
+        model.pred_X(:,vi) = X(:,1);
     else
         % change the percent variance explained to be just under the
         % current vethresh. So it counts as a 'coarse'-fit but can still be

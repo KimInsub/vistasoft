@@ -70,6 +70,7 @@ for n=1:numel(model),
             end;
     end
     model{n} = rmSet(model{n},'b',val);
+
 end;
 return;
 %-----------------------------------

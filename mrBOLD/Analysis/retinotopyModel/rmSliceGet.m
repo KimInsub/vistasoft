@@ -9,6 +9,8 @@ function tmp = rmSliceGet(model,slice,id)
 if ~exist('model','var') || isempty(model), error('Need model'); end
 if ~exist('slice','var') || isempty(slice), slice = 1;           end
 if ~exist('id','var') || isempty(id),       id = 1:numel(model); end
+if ~isfield(model{1},'tc'), model{1}.tc.result_tc{1} = [];   end
+
 
 % loop over models
 tmp = cell(numel(id),1);
@@ -56,6 +58,8 @@ for n=id,
                 tmp{n}.b(fn,:) = single(val(slice,:,fn));
             end;
     end
-end;
+    tmp{n}.pred_X = model{1}.tc.result_tc{n};
 
+end;
+ 
 return;

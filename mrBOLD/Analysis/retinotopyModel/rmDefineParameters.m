@@ -654,6 +654,10 @@ params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display'
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',50); % #
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
+
+% params.analysis.Hrf{1};
+% tmodel = stModel('1ch-glm',{'Exp2'},'default'); hrf = tmodel.irfs.hrf;
+
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 %--------------------------------------------------------------------------
