@@ -249,7 +249,8 @@ for slice=loopSlices,
 			      'shifted 2d prf fit (2*(x,y,sigma, positive only))',...
                   '1d prf fit (x,sigma, positive only)' ...  
                   '2d nonlinear prf fit (x,y,sigma,exponent, positive only)', ...
-                  '2d css nonlinear spatiotemporal prf fit'
+                  '2d css nonlinear spatiotemporal prf fit', ...
+                  '1ch spatiotemporal prf fit'
                   }
                     s{n}.b(2:nTrends+1,wProcess) = 0;
 
@@ -258,7 +259,9 @@ for slice=loopSlices,
                   'two independent 2d prf fit (2*(x,y,sigma, positive only))','t',...
                   'sequential 2d prf fit (2*(x,y,sigma, positive only))','s',...
                   'release two prf ties',...
-                  'difference 1d prf fit (x,sigma, sigma2, center=positive)'}
+                  'difference 1d prf fit (x,sigma, sigma2, center=positive)', ...
+                  '2ch spatiotemporal prf fit'
+                  }
                     s{n}.b(3:nTrends+2,wProcess) = 0;
 
             otherwise
@@ -437,7 +440,7 @@ for slice=loopSlices,
                     '2d nonlinear prf fit (x,y,sigma,exponent, positive only)'}
                 s{n}=rmSearchFit_oneGaussianNonlinear(s{n},data,params,wProcess,t);
           
-            case {'st', ...
+            case {'st',  '1ch spatiotemporal prf fit', '2ch spatiotemporal prf fit'...
                     '2d css nonlinear spatiotemporal prf fit'}
                
                 % data without detren
@@ -472,12 +475,6 @@ for slice=loopSlices,
     model = rmSliceSet(model,s,slice);
 end;
 
-
-
-%-----------------------------------
-% get Timecouse results
-%-----------------------------------
-
 %-----------------------------------
 % get Timecouse results
 %-----------------------------------
@@ -503,8 +500,14 @@ tc.beta = model{1}.beta;
 for mm = 1:numel(s)
     
     pp = s{mm}.pred_X;
-    bb = squeeze(tc.beta(mm,:,:));
-    bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
+    
+    if size(model{1}.beta,2) == 1
+        bb = squeeze(tc.beta(mm,:,:));
+        bb = num2cell(bb,1);
+    else
+        bb = squeeze(tc.beta(mm,:,:));
+        bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
+    end
     predictors = [];
     for i = 1:size(pp,2)
         predictors{i} = [squeeze(pp(:,i,:))  tc.trends];

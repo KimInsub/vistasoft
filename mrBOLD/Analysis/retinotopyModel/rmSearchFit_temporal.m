@@ -58,7 +58,7 @@ range.start(3,:) = range.lower(3,:);
 nNegFit  = 0;
 vethresh = params.analysis.fmins.vethresh;
 trends   = t.trends;
-t_id     = t.dcid+2;
+t_id     = t.dcid+tmodel.num_channels;
 
 
 %-----------------------------------
@@ -177,7 +177,7 @@ for ii = 1:numel(wProcess),
             model.s_theta(vi)    = 0;
             model.exponent(vi)   = outParams(4);
             model.rss(vi)        = rss;
-            model.b([1 2 t_id],vi) = b;
+            model.b([1 t_id],vi) = b;
         else
             % change the percent variance explained to be just under the
             % current vethresh. So it counts as a 'coarse'-fit but can still be

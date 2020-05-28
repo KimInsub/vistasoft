@@ -704,8 +704,15 @@ tc.beta = model{1}.beta;
 for mm = 1:numel(s)
     
     pp = s{mm}.pred_X;
-    bb = squeeze(tc.beta(mm,:,:));
-    bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
+    
+    if size(model{1}.beta,2) == 1
+        bb = squeeze(tc.beta(mm,:,:));
+        bb = num2cell(bb,1);
+    else
+        bb = squeeze(tc.beta(mm,:,:));
+        bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
+    end
+    
     predictors = [];
     for i = 1:size(pp,2)
         predictors{i} = [squeeze(pp(:,i,:))  tc.trends];
@@ -870,9 +877,16 @@ for n=1:numel(params.analysis.pRFmodel),
             model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
             
         case {'st'}
-            model{n} = rmSet(model{n},'b'   ,zeros(d1,d2,nt+2));
-            model{n} = rmSet(model{n},'desc','2D CSS nonlinear spatiotemporal pRF fit');
-            model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
+            if contains(params.analysis.temporal.temporalModel, '1ch')
+                model{n} = rmSet(model{n},'b'   ,zeros(d1,d2,nt+1));
+                model{n} = rmSet(model{n},'desc','1ch spatiotemporal pRF fit');
+                model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
+
+            elseif contains(params.analysis.temporal.temporalModel, '2ch')
+                model{n} = rmSet(model{n},'b'   ,zeros(d1,d2,nt+2));
+                model{n} = rmSet(model{n},'desc','2ch spatiotemporal pRF fit');
+                model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
+            end
 
         otherwise
             fprintf('Unknown pRF model: %s: IGNORED!',mfilename,params.analysis.pRFmodel{n})
