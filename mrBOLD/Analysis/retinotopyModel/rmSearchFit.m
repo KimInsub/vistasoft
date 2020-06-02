@@ -296,7 +296,9 @@ for slice=loopSlices,
     data     = data(:,wProcess);
     % detrend
     trendBetas = pinv(single(trends))*data;
-    data       = data - trends*trendBetas;
+    if params.analysis.doDetrend 
+        data       = data - trends*trendBetas;
+    end
     
     if params.analysis.dc.datadriven
         [data, trendBetas] = rmEstimateDC(data,trendBetas,params,trends,dcid);
@@ -442,17 +444,7 @@ for slice=loopSlices,
           
             case {'st',  '1ch spatiotemporal prf fit', '2ch spatiotemporal prf fit'...
                     '2d css nonlinear spatiotemporal prf fit'}
-               
-                % data without detren
 
-             
-                
-                
-%                 data(isnan(data)) = 0;
-%                 data = single(data);
-%                 tmodel.data = data;
-                % actual
-                
                 s{n}=rmSearchFit_temporal(s{n},data,params,wProcess,t);
 
             otherwise
@@ -490,8 +482,11 @@ rawdata = data;
 
 % detrend
 trendBetas = pinv(single(trends))*data;
-data       = data - trends*trendBetas;
-    
+
+if params.analysis.doDetrend
+    data       = data - trends*trendBetas;
+end
+
 tc.rawdata = rawdata;
 tc.data = data;
 tc.trends = trends;

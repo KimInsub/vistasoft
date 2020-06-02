@@ -650,13 +650,50 @@ params.analysis.fmins.expandRange = 5;
 params.analysis.fmins.refine = 'all';
 
 %+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+params.analysis.calcPC = 0;
+params.analysis.coarseDecimate = 1;
+
+
+if contains(params.analysis.session,'no')
+    params.analysis.doDetrend = 0;
+else
+    params.analysis.doDetrend = 1;
+end
+
+if exist(stRootPath,'file') > 0
+    params.analysis.predDir = [stRootPath '/gridPred/'];
+else
+    params.analysis.predDir = '../../gridPred/';
+end
+
+if params.stim.shuffled
+    params.analysis.predFile = ...
+        [params.analysis.predDir ...
+        lower(params.analysis.pRFmodel{1}), ...
+        '_dur-' num2str(params.stim.nFrames), ...
+        '_shuff-true', ...
+        '_seq-' params.analysis.stimseq, ...
+        '_tm-' params.analysis.temporalModel, ...
+        '_prediction.mat'];
+else
+    params.analysis.predFile = ...
+        [params.analysis.predDir ...
+        lower(params.analysis.pRFmodel{1}), ...
+        '_dur-' num2str(params.stim.nFrames), ...
+        '_shuff-false', ...
+        '_seq-' params.analysis.stimseq, ...
+        '_tm-' params.analysis.temporalModel, ...
+        '_prediction.mat'];
+    
+end
+
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',50); % #
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
-
-% params.analysis.Hrf{1};
-% tmodel = stModel('1ch-glm',{'Exp2'},'default'); hrf = tmodel.irfs.hrf;
 
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
