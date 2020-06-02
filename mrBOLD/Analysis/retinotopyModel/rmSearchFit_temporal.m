@@ -20,26 +20,13 @@ params.analysis.Y = double(params.analysis.Y);
 
 
 % % % [cst] parameters % % %% % %% % %% % %% % %% % %% % %% % %% % %
-pred_file = ['./st_seq-' params.analysis.stimseq, ...
-           '-tm-' params.analysis.temporalModel, ...
-           '_prediction.mat'];
-if isfile(pred_file)
-    load(pred_file); % cstmodel 
+if isfile(params.analysis.predFile)
+    disp('***st predfile exists --- loading...')
+    params.analysis.predFile
+    load(params.analysis.predFile);
+else
+    error("does not have Grid")
 end
-% 
-% 
-% params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
-% params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',10); % #
-% params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
-% params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
-% searchOptions = params.analysis.fmins.options;
-
-% 
-%    -0.8770
-%    -1.1768
-%     5.4784
-%     2.8896
-%     3.4717
 
 % % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %
 
