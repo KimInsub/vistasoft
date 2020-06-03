@@ -490,11 +490,16 @@ trends = single(trends);
 trendBetas = pinv(trends)*data;
 if params.analysis.doDetrend
     data = data - trends*trendBetas;
+    
 end
 
 rawdata   = rmDecimate(rawdata,params.analysis.coarseDecimate);
 data   = rmDecimate(data,params.analysis.coarseDecimate);
 trends = rmDecimate(trends,params.analysis.coarseDecimate);
+
+if ~params.analysis.doDetrend 
+    trends = zeros(size(trends));
+end
 
 tc.rawdata = rawdata;
 tc.data = data;
@@ -509,10 +514,12 @@ for mm = 1:numel(s)
     if size(model{1}.beta,2) == 1
         bb = squeeze(tc.beta(mm,:,:));
         bb = num2cell(bb,1);
+       
     else
         bb = squeeze(tc.beta(mm,:,:));
         bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
     end
+    
     
     predictors = [];
     for i = 1:size(pp,2)

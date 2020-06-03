@@ -472,25 +472,24 @@ end;
 %-----------------------------------
 
 data     = rmLoadData(view,p2,slice,coarse);    
-tmp      = sum(data(:,wProcess));
-ok       = ~isnan(tmp);
-wProcess = wProcess(ok); clear tmp ok;
-    
-% limit to voxels that will be processed
-data     = data(:,wProcess);
 rawdata = data;
 
 % detrend
 trendBetas = pinv(single(trends))*data;
-
 if params.analysis.doDetrend
     data       = data - trends*trendBetas;
+end
+
+if ~params.analysis.doDetrend 
+    trends = zeros(size(trends));
 end
 
 tc.rawdata = rawdata;
 tc.data = data;
 tc.trends = trends;
 tc.beta = model{1}.beta;
+tc.wProcess = wProcess;
+tc.vethresh = vethresh;
 
 for mm = 1:numel(s)
     
