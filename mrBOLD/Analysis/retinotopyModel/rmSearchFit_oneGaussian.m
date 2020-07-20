@@ -84,13 +84,15 @@ for ii = 1:numel(wProcess),
     % {
     % rf=rfGaussian2d(XY{1}, XY{2}, rf.sigmaMajor,rf.sigmaMinor,rf.Theta, ...
     %                            rf.Centerx0,rf.Centery0);
-    rf2=rfGaussian2d(params.analysis.X, params.analysis.Y, ...
-                    outParams(3),outParams(3),0, ...
-                               outParams(1),outParams(2));
+%     rf2=rfGaussian2d(params.analysis.X, params.analysis.Y, ...
+%                     outParams(3),outParams(3),0, ...
+%                                outParams(1),outParams(2));
     %}   
     
-    
-    X  = [params.analysis.allstimimages * rf trends];
+    predtc = params.analysis.allstimimages * rf ;
+    predtc = rmDecimate(predtc, params.analysis.coarseDecimate);
+
+    X  = [predtc trends];
     b    = pinv(X)*vData;
     rss  = norm(vData-X*b).^2;
 

@@ -152,7 +152,9 @@ switch lower(param),
         
     case {'exponent'}
         model.exponent = val;
-        
+    case {'pred_x'}
+        model.pred_X = val;
+
 	otherwise,
 		error('Unknown parameter: %s',param);
 

@@ -315,6 +315,8 @@ for slice=loopSlices,
         % For all cases, put in number of data points. 
         for mm = 1:numel(model),
             model{mm} = rmSet(model{mm},'npoints',size(data,1));
+            model{mm} = rmSet(model{mm},'pred_X', zeros(nSlices,size(data,2),model{mm}.npoints));
+
         end
     end
 
@@ -479,7 +481,7 @@ end;
 %-----------------------------------
 % get Timecouse results
 %-----------------------------------
-
+% load no smooting data;
 [data, params] = rmLoadData(view, params, slice,...
     params.analysis.coarseToFine);
 data(isnan(data)) = 0;
@@ -539,7 +541,6 @@ end
 
 
 
-
 %-----------------------------------
 % save and return output (if run interactively)
 %-----------------------------------
@@ -581,7 +582,6 @@ for n=1:numel(params.analysis.pRFmodel),
     model{n} = rmSet(model{n},'whrf'     ,params.stim(1).hrfType);
     model{n} = rmSet(model{n},'hrfparams',params.stim(1).hrfParams);
     model{n} = rmSet(model{n},'hrfmax'   ,params.analysis.HrfMaxResponse);
-
     %--- model specific
     % These model description names are important, they later guide the
     % refine stage.

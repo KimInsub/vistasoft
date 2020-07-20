@@ -37,7 +37,8 @@ end;
 % we do this for the following parameters
 fnames = {'x','y','x02','y02','sigmamajor','sigmaminor','sigmatheta',...
     'sigma2major','sigma2minor','sigma2theta',...
-    'b','rss','rss2','rsspos','rssneg','rawrss','rawrss2', 'exponent'};
+    'b','rss','rss2','rsspos','rssneg','rawrss','rawrss2', 'exponent', ...
+    'pred_X'};
 for m = 1:length(model),
     for f = 1:length(fnames),
         param = rmGet(model{m},fnames{f});
@@ -86,7 +87,17 @@ for m = 1:length(model),
                                 catch ME
 									fprintf(1,'[%s]: failed to get %s.\n',mfilename, fnames{f});
                                     rethrow(ME);
-								end
+                                end
+                            case 'pred_x'
+                                try
+                                    out                = zeros(1,size(allcoords,2),size(param,3));
+                                    out(1,coordsInd,:) = param;
+                                    param              = out;
+                                catch ME
+                                    fprintf(1,'[%s]: failed to get %s.\n',mfilename, fnames{f});
+                                    rethrow(ME);
+                                end
+
                             otherwise
                                 out            = zeros(1,size(allcoords,2));
                                 if numel(param)==numel(coordsInd),

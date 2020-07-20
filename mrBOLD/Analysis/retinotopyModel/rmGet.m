@@ -382,7 +382,10 @@ try
         case 'exponent'
             if isfield(model, 'exponent'),  val = model.exponent;
             else                            val = ones(size(model.sigma.major)); end
-            
+        case 'pred_x'
+            if isfield(model, 'pred_X'),    val = model.pred_X;
+            else                            val = []; end
+
         otherwise,
             error('[%s]:Unknown parameter: %s.',mfilename,param);
     end;

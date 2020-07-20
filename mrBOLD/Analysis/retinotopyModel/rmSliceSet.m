@@ -70,6 +70,31 @@ for n=1:numel(model),
             end;
     end
     model{n} = rmSet(model{n},'b',val);
+    
+    
+    % distribute beta values
+    val = rmGet(model{n},'pred_X');
+    switch length(size(val)) 
+        % switch on the number of dimensions, since inplane data has diff
+        % dimesnsionality than other views
+        case 4 % 4 dimensions means Inplane model:
+            %  3 dimensions of coords, and one dimension of beta values.
+            %  Hence the dims are x, y, slice, betas.
+            nbetas = size(val,4);            
+            %tmp{n}.b = zeros(nbetas,nvoxelsPerSlice,'single');
+            for fn = 1:nbetas,
+                data = reshape(double(tmp{n}.b(fn,:)), size(val,1), size(val,2));
+                val(:,:,slice,fn) = data;
+            end;
+            
+        otherwise            
+            val = val(:,:,1:size(tmp{n}.pred_X,1));
+            for fn = 1:size(val,3),
+                val(slice,:,fn) = double(tmp{n}.pred_X(fn,:));
+            end;
+    end
+    model{n} = rmSet(model{n},'pred_X',val);
+    
 
 end;
 return;

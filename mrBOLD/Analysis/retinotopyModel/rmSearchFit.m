@@ -281,7 +281,7 @@ for slice=loopSlices,
     %-----------------------------------
     % Development Stage
     %-----------------------------------
-    p2.analysis.calcPC=0;
+    p2.analysis.calcPC=1;
     
     
     

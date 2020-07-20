@@ -9,7 +9,7 @@ function tmp = rmSliceGet(model,slice,id)
 if ~exist('model','var') || isempty(model), error('Need model'); end
 if ~exist('slice','var') || isempty(slice), slice = 1;           end
 if ~exist('id','var') || isempty(id),       id = 1:numel(model); end
-if ~isfield(model{1},'tc'), model{1}.tc.result_tc{1} = [];   end
+% if ~isfield(model{1},'tc'), model{1}.tc.result_tc{1} = [];   end
 
 
 % loop over models
@@ -58,7 +58,26 @@ for n=id,
                 tmp{n}.b(fn,:) = single(val(slice,:,fn));
             end;
     end
-    tmp{n}.pred_X = model{1}.tc.result_tc{n};
+    
+    
+    val      = rmGet(model{n},'pred_X');
+    switch length(size(val)) % switch on the number of dimensions, since inplane data has diff dimesnsionality than other views
+          case 4 % 4 dimensions means Inplane model: 
+            nMat = size(val,4);
+            nvoxelsPerSlice = size(val,2)*size(val,1);
+            tmp{n}.pred_X = zeros(nMat,nvoxelsPerSlice,'single');
+            for fn = 1:nMat,
+                temp  = single(val(:,:,slice,fn));
+                tmp{n}.pred_X(fn,:) = temp(:);
+            end;
+        otherwise
+            tmp{n}.pred_X = zeros(size(val,3),size(val,2),'single');
+            for fn = 1:size(val,3),
+                tmp{n}.pred_X(fn,:) = single(val(slice,:,fn));
+            end;
+    end
+%     tmp{n}.pred_X = model{1}.tc.result_tc{n};
+
 
 end;
  
