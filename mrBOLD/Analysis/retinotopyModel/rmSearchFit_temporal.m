@@ -38,7 +38,8 @@ data = double(data);
 % (raw rss computation (similar to norm) and TolFun adjustments)
 model.s = model.s_major;
 % [range, TolFun] = rmSearchFit_range(params,model,data);
-[range, TolFun] = rmSearchFit_range_temporal(params,model,data);
+% [range, TolFun] = rmSearchFit_range_temporal(params,model,data);
+[range, TolFun] =  rmSearchFit_range_temporal_linear(params,model,data);
 range.start(3,:) = range.lower(3,:);
 
 % amount of negative fits
@@ -183,6 +184,7 @@ for ii = 1:numel(wProcess),
             model.exponent(vi)   = outParams(4);
             model.rss(vi)        = rss;
             model.b([1 2 t_id],vi) = b;
+
         else
             % change the percent variance explained to be just under the
             % current vethresh. So it counts as a 'coarse'-fit but can still be

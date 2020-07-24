@@ -90,9 +90,15 @@ for m = 1:length(model),
                                 end
                             case 'pred_x'
                                 try
-                                    out                = zeros(1,size(allcoords,2),size(param,3));
-                                    out(1,coordsInd,:) = param;
-                                    param              = out;
+                                    if size(param,4) == 2
+                                        out                = zeros(1,size(allcoords,2),size(param,3),size(param,4));
+                                        out(1,coordsInd,:,:) = param;
+                                        param              = out;
+                                    else
+                                        out                = zeros(1,size(allcoords,2),size(param,3));
+                                        out(1,coordsInd,:) = param;
+                                        param              = out;
+                                    end
                                 catch ME
                                     fprintf(1,'[%s]: failed to get %s.\n',mfilename, fnames{f});
                                     rethrow(ME);

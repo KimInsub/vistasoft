@@ -29,7 +29,9 @@ nChan = tmodel.num_channels;
 % chan == 1
 for cc = 1:nChan
     
-    pred = (stim{cc}*RF).^p(4);
+    pred = (stim{cc}*RF).^p(4); % for CSS
+%     pred = (stim{cc}*RF);
+
     pred = {double(pred)};
     
     pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, tmodel.fs, 1 / tmodel.tr), ...

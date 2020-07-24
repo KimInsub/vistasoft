@@ -133,7 +133,7 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
           % loop over grid
           tic
           for n=1:numel(s)-1
-              
+              n
            
               
               % make rfs
@@ -246,7 +246,7 @@ for slice=loopSlices,
     %-----------------------------------
  
     
-    [data, params] = rmLoadData(view, params, slice,...
+      [data, params] = rmLoadData(view, params, slice,...
         params.analysis.coarseToFine);
     
 
@@ -315,8 +315,7 @@ for slice=loopSlices,
         % For all cases, put in number of data points. 
         for mm = 1:numel(model),
             model{mm} = rmSet(model{mm},'npoints',size(data,1));
-            model{mm} = rmSet(model{mm},'pred_X', zeros(nSlices,size(data,2),model{mm}.npoints));
-
+%             model{mm} = rmSet(model{mm},'pred_X', zeros(nSlices,size(data,2),model{mm}.npoints));
         end
     end
 
@@ -466,6 +465,7 @@ for slice=loopSlices,
     %-----------------------------------
     % now we put back the temporary data from that slice
     %-----------------------------------
+    nchan = size(prediction,3);
     model = rmSliceSet(model,s,slice);  
 end;
 

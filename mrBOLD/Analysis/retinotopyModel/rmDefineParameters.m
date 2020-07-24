@@ -692,7 +692,7 @@ if isfield(params.stim,'shuffled')
     end
 end
 
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','iter'); %'none','iter','final'
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',50); % #
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees

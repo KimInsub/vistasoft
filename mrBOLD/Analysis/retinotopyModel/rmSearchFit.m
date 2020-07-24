@@ -184,7 +184,9 @@ drawnow;
 % go loop over slices
 for slice=loopSlices,
 
-
+    if contains(params.analysis.temporalModel,'2ch')
+        nchan = 2;
+    end
     %-----------------------------------
     % now we extract only the data from that slice and put it in a
     % temporary structure that will be modified throughout.
@@ -467,55 +469,55 @@ for slice=loopSlices,
     model = rmSliceSet(model,s,slice);
 end;
 
-%-----------------------------------
-% get Timecouse results
-%-----------------------------------
-
-data     = rmLoadData(view,p2,slice,coarse);    
-rawdata = data;
-
-% detrend
-trendBetas = pinv(single(trends))*data;
-if params.analysis.doDetrend
-    data       = data - trends*trendBetas;
-end
-
-if ~params.analysis.doDetrend 
-    trends = zeros(size(trends));
-end
-
-tc.rawdata = rawdata;
-tc.data = data;
-tc.trends = trends;
-tc.beta = model{1}.beta;
-tc.wProcess = wProcess;
-tc.vethresh = vethresh;
-
-for mm = 1:numel(s)
-    
-    pp = s{mm}.pred_X;
-    
-    if size(model{1}.beta,2) == 1
-        bb = squeeze(tc.beta(mm,:,:));
-        bb = num2cell(bb,1);
-    else
-        bb = squeeze(tc.beta(mm,:,:));
-        bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
-    end
-    predictors = [];
-    for i = 1:size(pp,2)
-        predictors{i} = [squeeze(pp(:,i,:))  tc.trends];
-    end
-    predictors = predictors';
-    tc.X{mm} = predictors;
-    tc.result_tc{mm} =s{mm}.pred_X;
-    tc.result_beta_tc{mm} = cell2mat(cellfun(@(x,y) x*y, predictors,bb, 'UniformOutput',false)');
-    
-    res = tc.rawdata - tc.result_beta_tc{mm};
-    res_var = sum(res .^ 2) ./ sum((tc.rawdata - mean(tc.rawdata)) .^ 2);
-    tc.varexp{mm} = 1 - res_var;
-
-end
+% %-----------------------------------
+% % get Timecouse results
+% %-----------------------------------
+% 
+% data     = rmLoadData(view,p2,slice,coarse);    
+% rawdata = data;
+% 
+% % detrend
+% trendBetas = pinv(single(trends))*data;
+% if params.analysis.doDetrend
+%     data       = data - trends*trendBetas;
+% end
+% 
+% if ~params.analysis.doDetrend 
+%     trends = zeros(size(trends));
+% end
+% 
+% tc.rawdata = rawdata;
+% tc.data = data;
+% tc.trends = trends;
+% tc.beta = model{1}.beta;
+% tc.wProcess = wProcess;
+% tc.vethresh = vethresh;
+% 
+% for mm = 1:numel(s)
+%     
+%     pp = s{mm}.pred_X;
+%     
+%     if size(model{1}.beta,2) == 1
+%         bb = squeeze(tc.beta(mm,:,:));
+%         bb = num2cell(bb,1);
+%     else
+%         bb = squeeze(tc.beta(mm,:,:));
+%         bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
+%     end
+%     predictors = [];
+%     for i = 1:size(pp,2)
+%         predictors{i} = [squeeze(pp(:,i,:))  tc.trends];
+%     end
+%     predictors = predictors';
+%     tc.X{mm} = predictors;
+%     tc.result_tc{mm} =s{mm}.pred_X;
+%     tc.result_beta_tc{mm} = cell2mat(cellfun(@(x,y) x*y, predictors,bb, 'UniformOutput',false)');
+%     
+%     res = tc.rawdata - tc.result_beta_tc{mm};
+%     res_var = sum(res .^ 2) ./ sum((tc.rawdata - mean(tc.rawdata)) .^ 2);
+%     tc.varexp{mm} = 1 - res_var;
+% 
+% end
 
 
 
@@ -527,7 +529,7 @@ end
 for n=1:numel(model),
     model{n} = rmSet(model{n},'coords',[]);
 end;
-output = rmSave(view,model,params,1,stage,tc);
+output = rmSave(view,model,params,1,stage);
 
 view   = viewSet(view,'rmFile',output);
 
