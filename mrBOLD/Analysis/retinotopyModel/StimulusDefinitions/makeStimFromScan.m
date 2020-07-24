@@ -113,16 +113,16 @@ I               = subSpatialDownsample(I, params);
 % Temporally downsample to 1 image per TR (by averaging filtered images)
 switch lower(params.analysis.pRFmodel{1})
     case {'st'}
-        
-        if isfile(['st_seq-' params.analysis.stimseq '_stim.mat'])
+        stimfilename = ['st_seq-' params.analysis.stimseq '_shuff-' num2str(params.stim.shuffled) '_stim.mat'];
+        if isfile(stimfilename)
             disp('*cst stim file exists no need to make a new one!*')
-            load(['st_seq-' params.analysis.stimseq '_stim.mat']);
+            load(stimfilename);
         else
             [temporal] = st_stimconvert(P.images, params.analysis.stimseq, ...
                  0.033 ,30);
             spaceTime_stim = reshape(temporal.stim, ...
                 size(temporal.stim,1)*size(temporal.stim,2),[]);
-            save(['st_seq-' params.analysis.stimseq '_stim.mat'], ...
+            save(stimfilename, ...
                 'spaceTime_stim','temporal','-v7.3');
             
             %%%% I was changing cst_stimconvert and how the file name is to
