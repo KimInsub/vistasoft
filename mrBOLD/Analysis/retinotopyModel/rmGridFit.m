@@ -481,63 +481,63 @@ end;
 %-----------------------------------
 % get Timecouse results
 %-----------------------------------
-% load no smooting data;
-[data, params] = rmLoadData(view, params, slice,...
-    params.analysis.coarseToFine);
-data(isnan(data)) = 0;
-rawdata = single(data);
- 
-[trends, ntrends, dcid] = rmMakeTrends(params);
-trends = single(trends);
-trendBetas = pinv(trends)*data;
-if params.analysis.doDetrend
-    data = data - trends*trendBetas;
-    
-end
-
-rawdata   = rmDecimate(rawdata,params.analysis.coarseDecimate);
-data   = rmDecimate(data,params.analysis.coarseDecimate);
-trends = rmDecimate(trends,params.analysis.coarseDecimate);
-
-if ~params.analysis.doDetrend 
-    trends = zeros(size(trends));
-end
-
-tc.rawdata = rawdata;
-tc.data = data;
-tc.trends = trends;
-tc.predictions = prediction;
-tc.beta = model{1}.beta;
-
-for mm = 1:numel(s)
-    
-    pp = s{mm}.pred_X;
-    
-    if size(model{1}.beta,2) == 1
-        bb = squeeze(tc.beta(mm,:,:));
-        bb = num2cell(bb,1);
-       
-    else
-        bb = squeeze(tc.beta(mm,:,:));
-        bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
-    end
-    
-    
-    predictors = [];
-    for i = 1:size(pp,2)
-        predictors{i} = [squeeze(pp(:,i,:))  tc.trends];
-    end
-    predictors = predictors';
-    tc.X{mm} = predictors;
-    tc.result_tc{mm} =s{mm}.pred_X;
-    tc.result_beta_tc{mm} = cell2mat(cellfun(@(x,y) x*y, predictors,bb, 'UniformOutput',false)');
-    
-    res = tc.rawdata - tc.result_beta_tc{mm};
-    res_var = sum(res .^ 2) ./ sum((tc.rawdata - mean(tc.rawdata)) .^ 2);
-    tc.varexp{mm} = 1 - res_var;
-
-end
-
+% % load no smooting data;
+% [data, params] = rmLoadData(view, params, slice,...
+%     params.analysis.coarseToFine);
+% data(isnan(data)) = 0;
+% rawdata = single(data);
+%  
+% [trends, ntrends, dcid] = rmMakeTrends(params);
+% trends = single(trends);
+% trendBetas = pinv(trends)*data;
+% if params.analysis.doDetrend
+%     data = data - trends*trendBetas;
+%     
+% end
+% 
+% rawdata   = rmDecimate(rawdata,params.analysis.coarseDecimate);
+% data   = rmDecimate(data,params.analysis.coarseDecimate);
+% trends = rmDecimate(trends,params.analysis.coarseDecimate);
+% 
+% if ~params.analysis.doDetrend 
+%     trends = zeros(size(trends));
+% end
+% 
+% tc.rawdata = rawdata;
+% tc.data = data;
+% tc.trends = trends;
+% tc.predictions = prediction;
+% tc.beta = model{1}.beta;
+% 
+% for mm = 1:numel(s)
+%     
+%     pp = s{mm}.pred_X;
+%     
+%     if size(model{1}.beta,2) == 1
+%         bb = squeeze(tc.beta(mm,:,:));
+%         bb = num2cell(bb,1);
+%        
+%     else
+%         bb = squeeze(tc.beta(mm,:,:));
+%         bb = num2cell(bb,2); bb = cellfun(@transpose,bb,'UniformOutput',false);
+%     end
+%     
+%     
+%     predictors = [];
+%     for i = 1:size(pp,2)
+%         predictors{i} = [squeeze(pp(:,i,:))  tc.trends];
+%     end
+%     predictors = predictors';
+%     tc.X{mm} = predictors;
+%     tc.result_tc{mm} =s{mm}.pred_X;
+%     tc.result_beta_tc{mm} = cell2mat(cellfun(@(x,y) x*y, predictors,bb, 'UniformOutput',false)');
+%     
+%     res = tc.rawdata - tc.result_beta_tc{mm};
+%     res_var = sum(res .^ 2) ./ sum((tc.rawdata - mean(tc.rawdata)) .^ 2);
+%     tc.varexp{mm} = 1 - res_var;
+% 
+% end
+% 
 
 
 
