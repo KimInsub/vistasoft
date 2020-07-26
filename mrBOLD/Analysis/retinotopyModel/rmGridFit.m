@@ -544,7 +544,7 @@ end;
 %-----------------------------------
 % save and return output (if run interactively)
 %-----------------------------------
-rmFile = rmSave(view,model,params,1,'gFit',tc);
+rmFile = rmSave(view,model,params,1,'gFit');
 view = viewSet(view,'rmFile',rmFile);
 
  
