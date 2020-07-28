@@ -17,7 +17,7 @@ t_id           = t.dcid+1;
 
 % we compute mean rss but we need sum rss (old convention)
 model.rss=single(model.rss./(size(prediction,1)-size(trends,2)+1));  
-stopidx = zeros(numel(params.analysis.x0),size(data,2));
+% stopidx = zeros(numel(params.analysis.x0),size(data,2));
 
 %-----------------------------------
 %--- fit different receptive fields profiles
@@ -73,7 +73,7 @@ for n=1:numel(params.analysis.x0),
     %--- store data with lower rss
     %-----------------------------------
     minRssIndex = rss < model.rss;
-    stopidx(n,:) = minRssIndex * n;
+%     stopidx(n,:) = minRssIndex * n;
     
     % now update
     model.x0(minRssIndex)       = params.analysis.x0(n);
@@ -87,9 +87,9 @@ for n=1:numel(params.analysis.x0),
     model.b([1 t_id],minRssIndex) = b(:,minRssIndex);
 end;
 
-stopidx = max(stopidx);
-pred_X = prediction(:,stopidx,:);
-model.pred_X = pred_X;
+% stopidx = max(stopidx);
+% pred_X = prediction(:,stopidx,:);
+% model.pred_X = pred_X;
 
 %warning('on', 'MATLAB:lscov:RankDefDesignMat')
 
