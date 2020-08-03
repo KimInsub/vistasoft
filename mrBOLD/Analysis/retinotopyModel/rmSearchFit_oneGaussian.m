@@ -31,20 +31,21 @@ t_id     = t.dcid+1;
 %-----------------------------------
 progress = 0;tic;
 for ii = 1:numel(wProcess),
+    if progress==0,
+        esttime = toc.*10;
+        if floor(esttime./3600)>0,
+            fprintf(1,'[%s]:Estimated processing time: %d voxels: %d hours.\n',...
+                mfilename,numel(wProcess),ceil(esttime./3600));
+        else
+            fprintf(1,'[%s]:Estimated processing time: %d voxels: %d minutes.\n',...
+                mfilename,numel(wProcess),ceil(esttime./60));
+        end;
+        fprintf(1,'[%s]:Nonlinear optimization (x,y,sigma):',mfilename);
+    end
     % progress monitor (10 dots)
     if floor(ii./numel(wProcess)*10)>progress,
         % print out estimated time left
-        if progress==0,
-            esttime = toc.*10;
-            if floor(esttime./3600)>0,
-                fprintf(1,'[%s]:Estimated processing time: %d voxels: %d hours.\n',...
-                    mfilename,numel(wProcess),ceil(esttime./3600));
-            else
-                fprintf(1,'[%s]:Estimated processing time: %d voxels: %d minutes.\n',...
-                    mfilename,numel(wProcess),ceil(esttime./60));
-            end;
-            fprintf(1,'[%s]:Nonlinear optimization (x,y,sigma):',mfilename);
-        end;
+      
         fprintf(1,'.');drawnow;
         progress = progress + 1;
     end;

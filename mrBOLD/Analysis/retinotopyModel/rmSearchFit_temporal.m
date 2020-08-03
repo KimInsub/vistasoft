@@ -28,6 +28,10 @@ else
     error("does not have Grid")
 end
 
+% if size(tmodel.chan_preds,1) == 3
+%     tmodel.run_preds=cat(1,tmodel.run_preds,tmodel.run_preds);
+% end
+
 % % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %% % %
 
 
@@ -54,23 +58,24 @@ t_id     = t.dcid+tmodel.num_channels;
 %-----------------------------------
 progress = 0;tic;
 for ii = 1:numel(wProcess),
+    if progress==0,
+        esttime = toc.*10;
+        if floor(esttime./3600)>0
+            fprintf(1,'[%s]:Estimated processing time: %d voxels: %d hours.\n',...
+                mfilename,numel(wProcess),ceil(esttime./3600));
+        else
+            fprintf(1,'[%s]:Estimated processing time: %d voxels: %d minutes.\n',...
+                mfilename,numel(wProcess),ceil(esttime./60));
+        end
+        fprintf(1,'[%s]:Nonlinear optimization (x,y,sigma, exponent):',mfilename);
+    end
+
     % progress monitor (10 dots)
     if floor(ii./numel(wProcess)*10)>progress,
         % print out estimated time left
-        if progress==0,
-            esttime = toc.*10;
-            if floor(esttime./3600)>0,
-                fprintf(1,'[%s]:Estimated processing time: %d voxels: %d hours.\n',...
-                    mfilename,numel(wProcess),ceil(esttime./3600));
-            else
-                fprintf(1,'[%s]:Estimated processing time: %d voxels: %d minutes.\n',...
-                    mfilename,numel(wProcess),ceil(esttime./60));
-            end;
-            fprintf(1,'[%s]:Nonlinear optimization (x,y,sigma, exponent):',mfilename);
-        end;
         fprintf(1,'.');drawnow;
         progress = progress + 1;
-    end;
+    end
 
     % volume index
     vi = wProcess(ii);
@@ -129,7 +134,13 @@ for ii = 1:numel(wProcess),
     % chan == 1
     for cc = 1:nChan
         
-        pred = (stim{cc}*rf).^n;
+        if size(tmodel.chan_preds,1) == 3 % for abc
+            pred = cat(1, (stim{1,cc}*rf).^n, (stim{2,cc}*rf).^n ,(stim{3,cc}*rf).^n);
+            pred = cat(1,pred,pred);
+        else
+            pred = (stim{cc}*rf).^n;
+        end
+        
         pred = {double(pred)};
         
         pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, tmodel.fs, 1 / tmodel.tr), ...
@@ -145,7 +156,11 @@ for ii = 1:numel(wProcess),
         prediction{cc} = pred_hrf;
         
     end
-    
+    if nChan == 2
+        preds = cell2mat(prediction);
+        normTs = max(preds(:,1))/max(preds(:,2));
+        prediction{2} = preds(:,2) *normTs;
+    end
 
     X  = [cell2mat(prediction) trends];
     b    = pinv(X)*vData;
@@ -155,7 +170,7 @@ for ii = 1:numel(wProcess),
     % outputs negative fits. If the fit is negative keep old (grid) fit. We
     % do adjust the rss, so it won't be accidentally counted as a 'good'
     % fit. 
-    if length(tmodel.chan_preds) == 1
+    if nChan == 1
         if b(1)>0
             model.x0(vi)         = outParams(1);
             model.y0(vi)         = outParams(2);
@@ -166,6 +181,8 @@ for ii = 1:numel(wProcess),
             model.exponent(vi)   = outParams(4);
             model.rss(vi)        = rss;
             model.b([1 t_id],vi) = b;
+            model.pred_X(:,vi,1) = prediction{1};
+
         else
             % change the percent variance explained to be just under the
             % current vethresh. So it counts as a 'coarse'-fit but can still be
@@ -173,7 +190,7 @@ for ii = 1:numel(wProcess),
             model.rss(vi)  = (1-max((vethresh-0.01),0)).*model.rawrss(vi);
             nNegFit = nNegFit + 1;
         end
-    elseif length(tmodel.chan_preds) == 2
+    elseif nChan == 2
         if b(1)>0 && b(2)>0
             model.x0(vi)         = outParams(1);
             model.y0(vi)         = outParams(2);
@@ -184,6 +201,8 @@ for ii = 1:numel(wProcess),
             model.exponent(vi)   = outParams(4);
             model.rss(vi)        = rss;
             model.b([1 2 t_id],vi) = b;
+            model.pred_X(:,vi,1) = prediction{1};
+            model.pred_X(:,vi,2) = prediction{2};
 
         else
             % change the percent variance explained to be just under the

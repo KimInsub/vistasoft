@@ -192,7 +192,7 @@ else % old approach
 	if params.analysis.calcPC, tSeries  = raw2pc(tSeries);  end
 
 	% average repeats
-	tSeries  = rmAverageTime(tSeries, params.stim(scannum).nUniqueRep);
+    tSeries  = rmAverageTime(tSeries, params.stim(scannum).nUniqueRep);
 end;
 
 

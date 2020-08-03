@@ -124,6 +124,26 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
         disp('***st predfile exists --- loading...')
         params.analysis.predFile
         load(params.analysis.predFile);
+    elseif contains(params.analysis.predFile,'abc') 
+            a =strrep(params.analysis.predFile,'abc','a');
+            load(a);
+            chan_preds1 = tmodel.chan_preds;
+            preds{1} = tmodel.run_preds;
+            
+            b =strrep(params.analysis.predFile,'abc','b');
+            load(b);
+            chan_preds2 = tmodel.chan_preds;
+            preds{2} = tmodel.run_preds;
+            
+            c =strrep(params.analysis.predFile,'abc','b');
+            load(c);
+            chan_preds3 = tmodel.chan_preds;
+
+            preds{3} = tmodel.run_preds;
+
+            tmodel.run_preds = cat(1,preds{1},preds{2}, preds{3});
+            tmodel.chan_preds=cat(1,chan_preds1,chan_preds2,chan_preds3);
+            save(params.analysis.predFile, 'tmodel', '-v7.3');
     else
         fprintf(1,'[%s]:Making %d model samples:',mfilename,n);
         tmodel = st_createIRF_grid(params);
@@ -237,6 +257,17 @@ else
     
 end
 
+% normalize channels
+% size(tmodel.run_preds,2)
+if tmodel.num_channels == 2
+    for ii = 1:size(tmodel.run_preds,2) % 720       82608           2
+        maxS = max(max(tmodel.run_preds(:,ii,1)));
+        maxT = max(max(tmodel.run_preds(:,ii,2)));
+        normTs(ii) = maxS / maxT;
+        tmodel.run_preds(:,ii,2) = tmodel.run_preds(:,ii,2) * normTs(ii);
+    end
+end
+
 % go loop over slices
 for slice=loopSlices,
     %-----------------------------------
@@ -245,10 +276,39 @@ for slice=loopSlices,
     % prewhiten (we could zeropad/let the trends deal with this/not care).
     %-----------------------------------
  
-    
-      [data, params] = rmLoadData(view, params, slice,...
-        params.analysis.coarseToFine);
-    
+    if contains(params.analysis.predFile,'abc') 
+        [trainSet, testSet]=st_getScanList(params.stim(1).shuffled);
+        
+        
+        % hack to fool mrVista that I have multiple runs..
+        for pp = 1:18
+            params.stim(pp).nUniqueRep =1;
+            params.stim(pp).nFrames = params.stim(1).nFrames;
+        end
+        [data] = rmLoadData(view, params, slice, [],...
+            [], trainSet);
+
+        [valdata, params] = rmLoadData(view, params, slice, [],...
+            [], testSet);
+        
+        params.stim(2:end) = [];
+        params.stim(1).nFrames = length(data);
+        
+%         tc.train_data = data;
+%         tc.test_data  = valdata;
+        tc.train_set = trainSet;
+        tc.test_set = testSet;
+        
+    else
+        [data, params] = rmLoadData(view, params, slice,...
+            params.analysis.coarseToFine);
+        
+%         tc.train_data = data;
+%         tc.test_data  = data;
+        tc.train_set = '';
+        tc.test_set = '';
+
+    end
 
     
     
@@ -272,6 +332,10 @@ for slice=loopSlices,
     
     [trends, ntrends, dcid] = rmMakeTrends(params);
     trends = single(trends);
+    
+    tc.trends = trends;
+
+    
     trendBetas = pinv(trends)*data;
     
     %%%%% don't do this for single pulse
@@ -315,7 +379,7 @@ for slice=loopSlices,
         % For all cases, put in number of data points. 
         for mm = 1:numel(model),
             model{mm} = rmSet(model{mm},'npoints',size(data,1));
-%             model{mm} = rmSet(model{mm},'pred_X', zeros(nSlices,size(data,2),model{mm}.npoints));
+            model{mm} = rmSet(model{mm},'pred_X', zeros(nSlices,size(data,2),model{mm}.npoints));
         end
     end
 
@@ -330,7 +394,6 @@ for slice=loopSlices,
     for n=1:numel(s),
         s{n}.rawrss       = rssdata;
     end;
-
     %-----------------------------------
     % At this point, we have a slice of data and we will fit different
     % pRF models.  This is the part of the code that is the slowest.
@@ -442,6 +505,9 @@ for slice=loopSlices,
                 
             case {'st'}
                 prediction = tmodel.run_preds;
+                if size(prediction,1) ~= size(data,1)
+                    prediction=cat(1,prediction,prediction);
+                end
                 s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
 %                 save(fitFile,'s','tmodel','t','params','-v7.3') % save params not needed lateron
 %                 if ~isfile(fitFile)
@@ -466,7 +532,7 @@ for slice=loopSlices,
     % now we put back the temporary data from that slice
     %-----------------------------------
     nchan = size(prediction,3);
-    model = rmSliceSet(model,s,slice);  
+    model = rmSliceSet(model,s,slice,nchan);  
 end;
 
 
@@ -502,7 +568,7 @@ end;
 % if ~params.analysis.doDetrend 
 %     trends = zeros(size(trends));
 % end
-% 
+
 % tc.rawdata = rawdata;
 % tc.data = data;
 % tc.trends = trends;
@@ -544,7 +610,7 @@ end;
 %-----------------------------------
 % save and return output (if run interactively)
 %-----------------------------------
-rmFile = rmSave(view,model,params,1,'gFit');
+rmFile = rmSave(view,model,params,1,'gFit',tc);
 view = viewSet(view,'rmFile',rmFile);
 
  

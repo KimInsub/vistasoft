@@ -111,7 +111,7 @@ params.matFileName = {rmFile params.matFileName{:}};
 % actually we are going to load it so we can use the "grid" to confine our
 % nonlinear minimization.
 
-tmp = load(rmFile);
+tmp = load(rmFile,'model');
 % tmp = load('/Users/insubkim/Documents/experiment/spatiotemporal/cstmodel/simulations/st_120b1_2ch-exp-sig/Inplane/Original/tmpResults-gFit.mat')
 model = tmp.model;
 
@@ -169,10 +169,11 @@ end;
 if strcmpi('inplane', viewGet(view, 'viewType'))
     loopSlices = 1:params.analysis.nSlices;
 end
+% params.analysis.fmins.vethresh = 0.1;
 
 % give some feedback so we know we are going
 vethresh = params.analysis.fmins.vethresh;
-    if isempty(ROIcoords),
+if isempty(ROIcoords),
     fprintf(1,'[%s]:Processing voxels with variance explained >= %.2f\n',...
         mfilename,vethresh);
 else
@@ -286,8 +287,30 @@ for slice=loopSlices,
     p2.analysis.calcPC=1;
     
     
+    if contains(params.analysis.predFile,'abc') 
+%         [trainSet, testSet]=st_getScanList(p2.stim(1).shuffled);
+        
+        
+        % hack to fool mrVista that I have multiple runs..
+        for pp = 1:18
+            p2.stim(pp).nUniqueRep =1;
+            p2.stim(pp).nFrames = p2.stim(1).nFrames;
+        end
+        [data] = rmLoadData(view, p2, slice, [],...
+            [], model{1}.tc.train_set);
+
+        [valdata] = rmLoadData(view, p2, slice, [],...
+            [], model{1}.tc.test_set);
+        
+        p2.stim(2:end) = [];
+        p2.stim(1).nFrames = size(data,1);
+        [trends, nTrends, dcid] = rmMakeTrends(p2);
+
+    else
+        data     = rmLoadData(view,p2,slice,coarse);
+
+    end
     
-    data     = rmLoadData(view,p2,slice,coarse);
     
     % check to see that all t-series data contain finite numbers
     tmp      = sum(data(:,wProcess));

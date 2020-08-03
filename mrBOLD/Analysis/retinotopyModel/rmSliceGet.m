@@ -59,26 +59,26 @@ for n=id,
             end;
     end
     
-%     
-%     val      = rmGet(model{n},'pred_X');
-%     val      = val(:,:,:,1);
-%     switch length(size(val)) % switch on the number of dimensions, since inplane data has diff dimesnsionality than other views
-%           case 4 % 4 dimensions means Inplane model: 
-% %             nMat = size(val,4);
-% %             nvoxelsPerSlice = size(val,2)*size(val,1);
-% %             tmp{n}.pred_X = zeros(nMat,nvoxelsPerSlice,'single');
-% %             for fn = 1:nMat,
-% %                 temp  = single(val(:,:,slice,fn));
-% %                 tmp{n}.pred_X(fn,:) = temp(:);
-% %             end;
-%         otherwise
-%             val      = rmGet(model{n},'pred_X');
-%             tmp{n}.pred_X = zeros(size(val,3),size(val,2),'single');
-%             for fn = 1:size(val,3),
-%                 tmp{n}.pred_X(fn,:) = single(val(slice,:,fn));
+    
+    val      = rmGet(model{n},'pred_X');
+    val      = val(:,:,:,1);
+    switch length(size(val)) % switch on the number of dimensions, since inplane data has diff dimesnsionality than other views
+          case 4 % 4 dimensions means Inplane model: 
+%             nMat = size(val,4);
+%             nvoxelsPerSlice = size(val,2)*size(val,1);
+%             tmp{n}.pred_X = zeros(nMat,nvoxelsPerSlice,'single');
+%             for fn = 1:nMat,
+%                 temp  = single(val(:,:,slice,fn));
+%                 tmp{n}.pred_X(fn,:) = temp(:);
 %             end;
-%     end
-% %     tmp{n}.pred_X = model{1}.tc.result_tc{n};
+        otherwise
+            val      = rmGet(model{n},'pred_X');
+            tmp{n}.pred_X = zeros(size(val,3),size(val,2),'single');
+            for fn = 1:size(val,3),
+                tmp{n}.pred_X(fn,:) = single(val(slice,:,fn));
+            end;
+    end
+%     tmp{n}.pred_X = model{1}.tc.result_tc{n};
 
 
 end;

@@ -113,24 +113,43 @@ I               = subSpatialDownsample(I, params);
 % Temporally downsample to 1 image per TR (by averaging filtered images)
 switch lower(params.analysis.pRFmodel{1})
     case {'st'}
-        stimfilename = ['st_seq-' params.analysis.stimseq '_shuff-' num2str(params.stim.shuffled) '_stim.mat'];
-        if isfile(stimfilename)
-            disp('*cst stim file exists no need to make a new one!*')
-            load(stimfilename);
+        
+        if strcmp(params.analysis.stimseq, 'abc')
+            stimfilename1 = ['st_seq-a_shuff-' num2str(params.stim(1).shuffled) '_stim.mat'];
+            stimfilename2 = ['st_seq-b_shuff-' num2str(params.stim(1).shuffled) '_stim.mat'];
+            stimfilename3 = ['st_seq-c_shuff-' num2str(params.stim(1).shuffled) '_stim.mat'];
+            
+%             b = load(stimfilename2);
+%             c = load(stimfilename3);
+            if isfile(stimfilename1) && isfile(stimfilename2) && isfile(stimfilename3)
+                disp('*** [abc] move on has all three cond grids ***')
+                disp('*** we actually dont need the grid in this case ***')
+                disp('*** just loading a [a] stimset ***')
+                load(stimfilename1);
+
+
+            else
+                error('*** need to fix this later for now we need to create a,b,c grids! ***')
+            end
+            images = spaceTime_stim;
+
         else
-            [temporal] = st_stimconvert(P.images, params.analysis.stimseq, ...
-                 0.033 ,30);
-            spaceTime_stim = reshape(temporal.stim, ...
-                size(temporal.stim,1)*size(temporal.stim,2),[]);
-            save(stimfilename, ...
-                'spaceTime_stim','temporal','-v7.3');
-            
-            %%%% I was changing cst_stimconvert and how the file name is to
-            %%%% be saved
-            
+            stimfilename = ['st_seq-' params.analysis.stimseq '_shuff-' num2str(params.stim.shuffled) '_stim.mat'];
+            if isfile(stimfilename)
+                disp('*cst stim file exists no need to make a new one!*')
+                load(stimfilename);
+            else
+                [temporal] = st_stimconvert(P.images, params.analysis.stimseq, ...
+                    0.033 ,30);
+                spaceTime_stim = reshape(temporal.stim, ...
+                    size(temporal.stim,1)*size(temporal.stim,2),[]);
+                save(stimfilename, ...
+                    'spaceTime_stim','temporal','-v7.3');
+            end
+            images = spaceTime_stim;
+
         end
         
-        images = spaceTime_stim;
         params.analysis.temporal.seqtype = params.analysis.stimseq;
         params.analysis.temporal = temporal; 
         params.analysis.temporal.temporalModel = params.analysis.temporalModel;

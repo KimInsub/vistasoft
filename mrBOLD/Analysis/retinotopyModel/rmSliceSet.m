@@ -1,4 +1,4 @@
-function model = rmSliceSet(model,tmp,slice)
+function model = rmSliceSet(model,tmp,slice,nchan)
 % rmSliceSet - put slice info into model struct
 % we convert back to double precision here.
 %
@@ -7,9 +7,9 @@ function model = rmSliceSet(model,tmp,slice)
 % 2008/01 SOD: extracted from rmGridFit.
 
 % loop over models
-% if notDefined('nchan')
-%     nchan=1;
-% end
+if notDefined('nchan')
+    nchan=1;
+end
 
 for n=1:numel(model),
     % variables may have slightly different names
@@ -76,38 +76,38 @@ for n=1:numel(model),
     model{n} = rmSet(model{n},'b',val);
     
     
-%     % distribute beta values
-%     val = rmGet(model{n},'pred_X');
-%     switch length(size(val)) 
-%         % switch on the number of dimensions, since inplane data has diff
-%         % dimesnsionality than other views
-%         case 4 % 4 dimensions means Inplane model:
-%             %  3 dimensions of coords, and one dimension of beta values.
-%             %  Hence the dims are x, y, slice, betas.
-% %             nbetas = size(val,4);            
-% %             %tmp{n}.b = zeros(nbetas,nvoxelsPerSlice,'single');
-% %             for fn = 1:nbetas,
-% %                 data = reshape(double(tmp{n}.b(fn,:)), size(val,1), size(val,2));
-% %                 val(:,:,slice,fn) = data;
-% %             end;
-%             
-%         otherwise   
-%             
-%             val = val(:,:,1:size(tmp{n}.pred_X,1));
-%             if nchan == 2
-%                 val = cat(4,val,val);
-%                 for fn = 1:size(val,3)
-%                     val(slice,:,fn,1) = double(tmp{n}.pred_X(fn,:,1));
-%                     val(slice,:,fn,2) = double(tmp{n}.pred_X(fn,:,2));
-%                 end;
-%             else
-%                 for fn = 1:size(val,3),
-%                     val(slice,:,fn) = double(tmp{n}.pred_X(fn,:));
-%                 end
-%             end
-%     end
-%     model{n} = rmSet(model{n},'pred_X',val);
-%     
+    % distribute beta values
+    val = rmGet(model{n},'pred_X');
+    switch length(size(val)) 
+        % switch on the number of dimensions, since inplane data has diff
+        % dimesnsionality than other views
+        case 4 % 4 dimensions means Inplane model:
+            %  3 dimensions of coords, and one dimension of beta values.
+            %  Hence the dims are x, y, slice, betas.
+%             nbetas = size(val,4);            
+%             %tmp{n}.b = zeros(nbetas,nvoxelsPerSlice,'single');
+%             for fn = 1:nbetas,
+%                 data = reshape(double(tmp{n}.b(fn,:)), size(val,1), size(val,2));
+%                 val(:,:,slice,fn) = data;
+%             end;
+            
+        otherwise   
+            
+            val = val(:,:,1:size(tmp{n}.pred_X,1));
+            if nchan == 2
+                val = cat(4,val,val);
+                for fn = 1:size(val,3)
+                    val(slice,:,fn,1) = double(tmp{n}.pred_X(fn,:,1));
+                    val(slice,:,fn,2) = double(tmp{n}.pred_X(fn,:,2));
+                end;
+            else
+                for fn = 1:size(val,3),
+                    val(slice,:,fn) = double(tmp{n}.pred_X(fn,:));
+                end
+            end
+    end
+    model{n} = rmSet(model{n},'pred_X',val);
+    
 
 end;
 return;

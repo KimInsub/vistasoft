@@ -29,7 +29,15 @@ nChan = tmodel.num_channels;
 % chan == 1
 for cc = 1:nChan
     
-    pred = (stim{cc}*RF).^p(4); % for CSS
+    if size(tmodel.chan_preds,1) == 3 % for abc        
+        pred = cat(1, (stim{1,cc}*RF).^p(4), (stim{2,cc}*RF).^p(4) ,(stim{3,cc}*RF).^p(4));
+        pred = cat(1,pred,pred);
+    else
+        
+        pred = (stim{cc}*RF).^p(4); % for CSS
+
+    end
+
 %     pred = (stim{cc}*RF);
 
     pred = {double(pred)};
@@ -48,7 +56,11 @@ for cc = 1:nChan
     
 end
 %     X    = [prediction(:,n,1) prediction(:,n,2) trends];
-
+if nChan == 2
+   preds = cell2mat(prediction);
+   normTs = max(preds(:,1))/max(preds(:,2));
+   prediction{2} = preds(:,2) *normTs;
+end
 X = [cell2mat(prediction) t];
 
 % fit - inlining pinv
@@ -67,17 +79,26 @@ end
 b = pinvX*Y;
 
 % do for both negative and positive fits
-e = norm(Y - X*b);
+% e = norm(Y - X*b);
 
 % compute residual sum of squares (e)
 % e = norm(Y - X*abs(b));
 
-% 
-% if b(1)>0,
-%     e = norm(Y - X*b);
-% else
-%     e = norm(Y).*(1+sum(abs(b(1))));
-% end
+if nChan == 1
+    if b(1)>0
+        e = norm(Y - X*b);
+    else
+        e = norm(Y).*(1+sum(abs(b(1))));
+    end
+    
+elseif nChan == 2
+    
+    if b(1)>0  &&  b(2)>0
+        e = norm(Y - X*b);
+    else
+        e = norm(Y).*(1+sum(abs(b(1))));
+    end
+end
 return;
 
 
