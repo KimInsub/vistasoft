@@ -111,7 +111,7 @@ params.matFileName = {rmFile params.matFileName{:}};
 % actually we are going to load it so we can use the "grid" to confine our
 % nonlinear minimization.
 
-tmp = load(rmFile,'model');
+tmp = load(rmFile);
 % tmp = load('/Users/insubkim/Documents/experiment/spatiotemporal/cstmodel/simulations/st_120b1_2ch-exp-sig/Inplane/Original/tmpResults-gFit.mat')
 model = tmp.model;
 
@@ -552,7 +552,7 @@ end;
 for n=1:numel(model),
     model{n} = rmSet(model{n},'coords',[]);
 end;
-output = rmSave(view,model,params,1,stage);
+output = rmSave(view,model,params,1,stage,tc);
 
 view   = viewSet(view,'rmFile',output);
 

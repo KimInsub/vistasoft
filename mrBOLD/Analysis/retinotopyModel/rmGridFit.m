@@ -135,7 +135,7 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
             chan_preds2 = tmodel.chan_preds;
             preds{2} = tmodel.run_preds;
             
-            c =strrep(params.analysis.predFile,'abc','b');
+            c =strrep(params.analysis.predFile,'abc','c');
             load(c);
             chan_preds3 = tmodel.chan_preds;
 
@@ -292,7 +292,7 @@ for slice=loopSlices,
             [], testSet);
         
         params.stim(2:end) = [];
-        params.stim(1).nFrames = length(data);
+        params.stim(1).nFrames = size(data,1);
         
 %         tc.train_data = data;
 %         tc.test_data  = valdata;
