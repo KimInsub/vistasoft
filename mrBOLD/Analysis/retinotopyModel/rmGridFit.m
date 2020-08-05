@@ -259,6 +259,7 @@ end
 
 % normalize channels
 % size(tmodel.run_preds,2)
+if strcmp(params.analysis.pRFmodel{1}, 'st')
 if tmodel.num_channels == 2
     for ii = 1:size(tmodel.run_preds,2) % 720       82608           2
         maxS = max(max(tmodel.run_preds(:,ii,1)));
@@ -266,6 +267,7 @@ if tmodel.num_channels == 2
         normTs(ii) = maxS / maxT;
         tmodel.run_preds(:,ii,2) = tmodel.run_preds(:,ii,2) * normTs(ii);
     end
+end
 end
 
 % go loop over slices

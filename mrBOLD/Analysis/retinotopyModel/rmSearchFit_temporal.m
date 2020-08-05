@@ -161,7 +161,9 @@ for ii = 1:numel(wProcess),
         normTs = max(preds(:,1))/max(preds(:,2));
         prediction{2} = preds(:,2) *normTs;
     end
-
+if ii == 40
+    stop=3;
+end
     X  = [cell2mat(prediction) trends];
     b    = pinv(X)*vData;
     rss  = norm(vData-X*b).^2;
