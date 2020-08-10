@@ -147,7 +147,7 @@ end
 % grabbing both (x0, y0) and (pol, ecc) are redundant, and allow for the
 % two specifications to get separated (because of the y-flip issue). So,
 % re-express ecc and pol using x0 and y0.
-[ph ecc] = cart2pol(x0, y0);
+[ph, ecc] = cart2pol(x0, y0);
 
 % If 'threshByCoh' is set (i.e., true), thresholding will be set based on the
 % view struct's coherence field, instead of from the variance explained in

@@ -44,7 +44,9 @@ model.s = model.s_major;
 % [range, TolFun] = rmSearchFit_range(params,model,data);
 % [range, TolFun] = rmSearchFit_range_temporal(params,model,data);
 [range, TolFun] =  rmSearchFit_range_temporal_linear(params,model,data);
-range.start(3,:) = range.lower(3,:);
+% [range TolFun] = rmSearchFit_range(params,model,data);
+% [range2 TolFun2] = rmSearchFit_range(params,model,data);
+% range.start(3,:) = range.lower(3,:);
 
 % amount of negative fits
 nNegFit  = 0;
@@ -68,6 +70,7 @@ for ii = 1:numel(wProcess),
                 mfilename,numel(wProcess),ceil(esttime./60));
         end
         fprintf(1,'[%s]:Nonlinear optimization (x,y,sigma, exponent):',mfilename);
+        progress = progress + 1;
     end
 
     % progress monitor (10 dots)
@@ -136,7 +139,7 @@ for ii = 1:numel(wProcess),
         
         if size(tmodel.chan_preds,1) == 3 % for abc
             pred = cat(1, (stim{1,cc}*rf).^n, (stim{2,cc}*rf).^n ,(stim{3,cc}*rf).^n);
-            pred = cat(1,pred,pred);
+%             pred = cat(1,pred,pred);
         else
             pred = (stim{cc}*rf).^n;
         end
@@ -161,9 +164,7 @@ for ii = 1:numel(wProcess),
         normTs = max(preds(:,1))/max(preds(:,2));
         prediction{2} = preds(:,2) *normTs;
     end
-if ii == 40
-    stop=3;
-end
+
     X  = [cell2mat(prediction) trends];
     b    = pinv(X)*vData;
     rss  = norm(vData-X*b).^2;

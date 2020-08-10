@@ -290,22 +290,33 @@ for slice=loopSlices,
     if contains(params.analysis.predFile,'abc') 
 %         [trainSet, testSet]=st_getScanList(p2.stim(1).shuffled);
         
+[trainSet, testSet]=st_getScanList(params.stim(1).shuffled,params.stim.split);
         
+        
+
         % hack to fool mrVista that I have multiple runs..
         for pp = 1:18
             p2.stim(pp).nUniqueRep =1;
             p2.stim(pp).nFrames = p2.stim(1).nFrames;
         end
-        [data] = rmLoadData(view, p2, slice, [],...
-            [], model{1}.tc.train_set);
+        [data1] = rmLoadData(view, p2, slice, [],...
+            [], model{1}.tc.train_set(1:3));
+        [data2] = rmLoadData(view, p2, slice, [],...
+            [], model{1}.tc.train_set(4:end));
 
-        [valdata] = rmLoadData(view, p2, slice, [],...
-            [], model{1}.tc.test_set);
+        data=(data1+data2)/2;
+
+        
+%         [valdata] = rmLoadData(view, p2, slice, [],...
+%             [], model{1}.tc.test_set);
         
         p2.stim(2:end) = [];
         p2.stim(1).nFrames = size(data,1);
         [trends, nTrends, dcid] = rmMakeTrends(p2);
-
+        
+        tc.train_set = model{1}.tc.train_set;
+        tc.test_set = model{1}.tc.train_set;
+        tc.split = params.stim.split;         
     else
         data     = rmLoadData(view,p2,slice,coarse);
 

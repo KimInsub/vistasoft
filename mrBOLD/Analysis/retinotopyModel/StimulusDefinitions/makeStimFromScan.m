@@ -121,7 +121,7 @@ switch lower(params.analysis.pRFmodel{1})
             
 %             b = load(stimfilename2);
 %             c = load(stimfilename3);
-            if isfile(stimfilename1) && isfile(stimfilename2) && isfile(stimfilename3)
+            if isfile(stimfilename1) || isfile(stimfilename2) || isfile(stimfilename3)
                 disp('*** [abc] move on has all three cond grids ***')
                 disp('*** we actually dont need the grid in this case ***')
                 disp('*** just loading a [a] stimset ***')

@@ -31,7 +31,7 @@ for cc = 1:nChan
     
     if size(tmodel.chan_preds,1) == 3 % for abc        
         pred = cat(1, (stim{1,cc}*RF).^p(4), (stim{2,cc}*RF).^p(4) ,(stim{3,cc}*RF).^p(4));
-        pred = cat(1,pred,pred);
+%         pred = cat(1,pred,pred);
     else
         
         pred = (stim{cc}*RF).^p(4); % for CSS
@@ -79,26 +79,26 @@ end
 b = pinvX*Y;
 
 % do for both negative and positive fits
-% e = norm(Y - X*b);
-
+e = norm(Y - X*b);
+% 
 % compute residual sum of squares (e)
 % e = norm(Y - X*abs(b));
 
-if nChan == 1
-    if b(1)>0
-        e = norm(Y - X*b);
-    else
-        e = norm(Y).*(1+sum(abs(b(1))));
-    end
-    
-elseif nChan == 2
-    
-    if b(1)>0  &&  b(2)>0
-        e = norm(Y - X*b);
-    else
-        e = norm(Y).*(1+sum(abs(b(1))));
-    end
-end
+% if nChan == 1
+%     if b(1)>0
+%         e = norm(Y - X*b);
+%     else
+%         e = norm(Y).*(1+sum(abs(b(1))));
+%     end
+%     
+% elseif nChan == 2
+%     
+%     if b(1)>0  &&  b(2)>0
+%         e = norm(Y - X*b);
+%     else
+%         e = norm(Y).*(1+sum(abs(b(1))));
+%     end
+% end
 return;
 
 

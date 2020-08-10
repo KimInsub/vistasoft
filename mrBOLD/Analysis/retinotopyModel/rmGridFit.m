@@ -153,7 +153,6 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
           % loop over grid
           tic
           for n=1:numel(s)-1
-              n
            
               
               % make rfs
@@ -279,28 +278,29 @@ for slice=loopSlices,
     %-----------------------------------
  
     if contains(params.analysis.predFile,'abc') 
-        [trainSet, testSet]=st_getScanList(params.stim(1).shuffled);
+        [trainSet, testSet]=st_getScanList(params.stim(1).shuffled,params.stim.split);
         
-        
+        trainSet1 = trainSet(1:3); trainSet2 = trainSet(4:end);
+
         % hack to fool mrVista that I have multiple runs..
         for pp = 1:18
             params.stim(pp).nUniqueRep =1;
             params.stim(pp).nFrames = params.stim(1).nFrames;
         end
-        [data] = rmLoadData(view, params, slice, [],...
-            [], trainSet);
+        [data1,params] = rmLoadData(view, params, slice, [],...
+            [], trainSet1);
+        [data2,params] = rmLoadData(view, params, slice, [],...
+            [], trainSet2);
+%         [valdata, params] = rmLoadData(view, params, slice, [],...
+%             [], testSet);
 
-        [valdata, params] = rmLoadData(view, params, slice, [],...
-            [], testSet);
-        
+        data=(data1+data2)/2;
         params.stim(2:end) = [];
         params.stim(1).nFrames = size(data,1);
         
-%         tc.train_data = data;
-%         tc.test_data  = valdata;
         tc.train_set = trainSet;
         tc.test_set = testSet;
-        
+        tc.split = params.stim.split; 
     else
         [data, params] = rmLoadData(view, params, slice,...
             params.analysis.coarseToFine);
@@ -309,7 +309,7 @@ for slice=loopSlices,
 %         tc.test_data  = data;
         tc.train_set = '';
         tc.test_set = '';
-
+        tc.split = NaN;
     end
 
     
