@@ -132,7 +132,7 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
             
             b =strrep(params.analysis.predFile,'abc','b');
             load(b);
-            chan_preds2 = tmodel.chan_preds;
+            chan_preds2 = tmodel.chan_preds;    
             preds{2} = tmodel.run_preds;
             
             c =strrep(params.analysis.predFile,'abc','c');
