@@ -109,7 +109,6 @@ end
 
 % Spatially downsample the images to the X-Y grid
 I               = subSpatialDownsample(I, params);
-
 % Temporally downsample to 1 image per TR (by averaging filtered images)
 switch lower(params.analysis.pRFmodel{1})
     case {'st'}
@@ -139,7 +138,9 @@ switch lower(params.analysis.pRFmodel{1})
                 disp('*cst stim file exists no need to make a new one!*')
                 load(stimfilename);
             else
-                [temporal] = st_stimconvert(P.images, params.analysis.stimseq, ...
+                tmt = reshape(I.images,sqrt(size(I.images,1)),sqrt(size(I.images,1)),size(I.images,2));
+
+                [temporal] = st_stimconvert(tmt, params.analysis.stimseq, ...
                     0.033 ,30);
                 spaceTime_stim = reshape(temporal.stim, ...
                     size(temporal.stim,1)*size(temporal.stim,2),[]);
