@@ -385,10 +385,10 @@ switch lower(params.analysis.pRFmodel{1})
     case {'st'}
         % each grid step becomes larger (0.6) comapared to previous
         % params.analysis.maxRF step size
-        
+
         % if you want even bigger prf
 %         params.analysis.maxRF = params.analysis.fieldSize + 10; 
-        params.analysis.maxRF = params.analysis.fieldSize;
+        params.analysis.maxRF = round(params.analysis.fieldSize*1.5);
         params.analysis.coarseDecimate = 0;
         params.analysis.nonlinear = true;
 %         params.matFileName =params.analysis.pRFmodel;
