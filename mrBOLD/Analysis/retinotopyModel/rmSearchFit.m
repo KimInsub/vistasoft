@@ -563,7 +563,7 @@ end;
 for n=1:numel(model),
     model{n} = rmSet(model{n},'coords',[]);
 end;
-output = rmSave(view,model,params,1,stage,tc);
+output = rmSave(view,model,params,1,stage);
 
 view   = viewSet(view,'rmFile',output);
 
