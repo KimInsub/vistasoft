@@ -278,28 +278,48 @@ for slice=loopSlices,
     %-----------------------------------
  
     if contains(params.analysis.predFile,'abc') 
-        [trainSet, testSet]=st_getScanList(params.stim(1).shuffled,params.stim.split);
         
-        trainSet1 = trainSet(1:3); trainSet2 = trainSet(4:end);
-
-        % hack to fool mrVista that I have multiple runs..
+        
+        [trainSet, testSet]=st_getScanList(params.stim(1).shuffled,params.stim.split);
+       
+ 
+         % hack to fool mrVista that I have multiple runs..
         for pp = 1:18
             params.stim(pp).nUniqueRep =1;
             params.stim(pp).nFrames = params.stim(1).nFrames;
         end
-        [data1,params] = rmLoadData(view, params, slice, [],...
-            [], trainSet1);
-        [data2,params] = rmLoadData(view, params, slice, [],...
-            [], trainSet2);
+
+        for ss = 1:size(trainSet,1)
+%             train{ss} = trainSet(ss,:);
+            [data(:,:,ss),params] = rmLoadData(view, params, slice, [],...
+                [], trainSet(ss,:));
+
+        end
+        data=mean(data,3);
+%         for ss = 1:size(testSet,1)
+%             [data2{ss},params] = rmLoadData(view, params, slice, [],...
+%                 [], testSet(ss,:));
+%         end
+        
+        
+%         trainSet1 = trainSet(1:3); trainSet2 = trainSet(4:end);
+
+%      
+%         [data1,params] = rmLoadData(view, params, slice, [],...
+%             [], trainSet1);
+%         [data2,params] = rmLoadData(view, params, slice, [],...
+%             [], trainSet2);
 %         [valdata, params] = rmLoadData(view, params, slice, [],...
 %             [], testSet);
 
-        data=(data1+data2)/2;
+%         data=(data1+data2)/2;
+
+      
         params.stim(2:end) = [];
         params.stim(1).nFrames = size(data,1);
-        
-        tc.train_set = trainSet;
-        tc.test_set = testSet;
+        trainSet = trainSet'; testSet = testSet';
+        tc.train_set = trainSet(:);
+        tc.test_set = testSet(:);
         tc.split = params.stim.split; 
     else
         [data, params] = rmLoadData(view, params, slice,...
