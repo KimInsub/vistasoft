@@ -1,4 +1,4 @@
-function pathStr=rmSave(view,model,params,forceSave,stage,tc)
+function pathStr=rmSave(view,model,params,forceSave,stage,df)
 % rmSave - save/reshape model analysis in output that mrVISTA can read
 %
 % output = rmSave(view,model,forceSave);
@@ -9,7 +9,7 @@ if notDefined('model'), error('Need model structure');   end;
 if notDefined('params'), error('Need params structure'); end;
 if notDefined('forceSave'), forceSave = false;           end;
 if notDefined('stage'),     stage = [];                  end;
-if notDefined('tc'),     tc = [];                        end;
+if notDefined('df'),     df = [];                        end;
 
 % reshape all params in model struct
 dims     = viewGet(view,'datasize');
@@ -166,9 +166,10 @@ if exist(pathStr,'file')
         end
     end
 end
-model{1}.tc = tc;
+% model{1}.df = df;
 % save
-save(pathStr,'model','params','-v7.3');
+save(pathStr,'model','params','df','-v7.3');
+
 fprintf(1,'[%s]:Saved %s.\n',mfilename,pathStr);
 return;
 %------------------------

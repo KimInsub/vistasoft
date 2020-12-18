@@ -1,4 +1,4 @@
-function [t, nt, dcid] = rmMakeTrends(params,verbose)
+function [t, nt, dcid] = rmMakeTrends(params,stimSet,verbose)
 % rmMakeTrends - make trends to add to GLM fit
 %
 % [t, nt, dcid] = rmMakeTrends(params, [verbose]);
@@ -10,18 +10,22 @@ function [t, nt, dcid] = rmMakeTrends(params,verbose)
 %
 % 2006/02 SOD: wrote it.
 % 2007/08 SOD: vectorized and changed logic.
-if ~exist('verbose','var') || isempty(verbose), verbose = prefsVerboseCheck; end
+% 2020/12 ISK: futher developed to account fo cross validation runs.
 
+if ~exist('verbose','var') || isempty(verbose), verbose = prefsVerboseCheck; end
+if notDefined('stimSet')
+    stimSet = 1:length(params.stim);
+end
 % preparation
-tf = [params.stim(:).nFrames]./[params.stim(:).nUniqueRep];
-ndct   = [params.stim(:).nDCT].*2+1;
+tf = [params.stim(stimSet).nFrames]./[params.stim(stimSet).nUniqueRep];
+ndct   = [params.stim(stimSet).nDCT].*2+1;
 t      = zeros(sum(tf),max(sum(ndct),1));
 start1 = [0 cumsum(tf)];
 start2 = [0 cumsum(ndct)];
 
 % make them separately for every scan
-dcid= zeros(1,numel(params.stim));
-for n = 1:numel(params.stim)
+dcid= zeros(1,numel(stimSet));
+for n = 1:numel(stimSet)
     % stimulus length 
     tc = linspace(0,2*pi,tf(n))';
 

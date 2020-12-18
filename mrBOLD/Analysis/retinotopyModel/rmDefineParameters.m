@@ -389,7 +389,7 @@ switch lower(params.analysis.pRFmodel{1})
         % if you want even bigger prf
 %         params.analysis.maxRF = params.analysis.fieldSize + 10; 
         params.analysis.maxRF = round(params.analysis.fieldSize*1.5);
-        params.analysis.coarseDecimate = 0;
+%         params.analysis.coarseDecimate = 0;
         params.analysis.nonlinear = true;
 %         params.matFileName =params.analysis.pRFmodel;
 
@@ -527,8 +527,6 @@ switch params.analysis.pRFmodel{1}
         params.analysis.sigmaMinor  = params.analysis.sigmaMajor;
         params.analysis.theta       = params.analysis.sigmaMajor * 0;
 
-        % cst specifics
-        params.analysis.name = 'kis';
 
                 
     otherwise
@@ -653,9 +651,9 @@ params.analysis.fmins.refine = 'all';
 %+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 %+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-params.analysis.calcPC = 1;
-params.analysis.coarseDecimate = 0; 
-params.analysis.coarseToFine = false; %smoothing
+% params.analysis.calcPC = 1;
+% params.analysis.coarseDecimate = 0; 
+% params.analysis.coarseToFine = false; %smoothing
 
 if contains(params.analysis.session,'no')
     params.analysis.doDetrend = 0;
@@ -664,40 +662,29 @@ else
 end
 
 if exist(stRootPath,'file') > 0
-    params.analysis.predDir = [stRootPath '/gridPred/'];
+    params.analysis.predDir = Constants.getDir.grid_dir;
+    mkdir(params.analysis.predDir)
 else
     params.analysis.predDir = '../gridPred/';
 end
 
-if isfield(params.stim,'shuffled')    
-    if params.stim(1).shuffled
-        params.analysis.predFile = ...
-            [params.analysis.predDir ...
-            lower(params.analysis.pRFmodel{1}), ...
-            '_dur-' num2str(params.stim.nFrames), ...
-            '_shuff-true', ...
-            '_seq-' params.analysis.stimseq, ...
-            '_tm-' params.analysis.temporalModel, ...
-            '_prediction.mat'];
-    else
-        params.analysis.predFile = ...
-            [params.analysis.predDir ...
-            lower(params.analysis.pRFmodel{1}), ...
-            '_dur-' num2str(params.stim(1).nFrames), ...
-            '_shuff-false', ...
-            '_seq-' params.analysis.stimseq, ...
-            '_tm-' params.analysis.temporalModel, ...
-            '_prediction.mat'];
-        
-    end
-end
+%[IK] removed shuffled format & params.analysis.stimseq
+params.analysis.predFile = ...
+    [params.analysis.predDir ...
+    params.analysis.prefix, ...
+    '_prfModel-' lower(params.analysis.pRFmodel{1}), ...
+    '_dur-' num2str(params.stim(1).nFrames), ...
+    '_tm-' params.analysis.temporalModel, ...
+    '_prediction.mat'];
 
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',25); % #
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolFun',1e-8); % degrees
 
-%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 %--------------------------------------------------------------------------
 %--- user defined params
@@ -1040,13 +1027,23 @@ for n=1:2:numel(vararg),
         case {'refine','search fit refine parameter'}
             params.analysis.fmins.refine = data;
             
-        case {'stimseq'}
-            params.analysis.stimseq = data;
-            
-        case {'temporalmodel'}
-            params.analysis.temporalModel = data;
+            % [IK] removed stimseq & added prefix instead
+%         case {'stimseq'} 
+%             params.analysis.stimseq = data;
 
+        % [IK] added note
+        case {'note'} % can-now include prefix to the outputs
+            params.analysis.prefix = data;
+
+        case {'temporalmodel'} % temporal models included
+            params.analysis.temporalModel = data;
             
+        case {'cache'} % save intermediate outputs
+            params.analysis.cache = logical(data);
+
+        case {'cv'} % cross validation flag
+            params.analysis.cv = logical(data);
+
         otherwise,
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...
                 mfilename,vararg{n});

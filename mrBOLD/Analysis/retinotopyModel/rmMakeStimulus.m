@@ -83,6 +83,8 @@ for n=1:numel(params.stim)
             params = makeStimFromScan(params,1);
         case 'Wedge'
             params = makeWedge(params,1);
+        case 'StiminMS' %[IK added ms resolution stimulus]
+            params = makeStiminMS(params,n);
         otherwise
             error('make%s does not exist', params.stim(n).stimType)
     end    
@@ -172,9 +174,16 @@ for n=1:length(params.stim)
 end
 
 % matrix with all the different stimulus images.
-params.analysis.allstimimages = [params.stim(:).images]';
-params.analysis.allstimimages_unconvolved = [params.stim(:).images_unconvolved]';  % time x pixels
-params.analysis.scan_number    = [params.stim(:).scan_number]';
+% [IK] deal with limited RAM size
+try
+    params.analysis.allstimimages = [params.stim(:).images]';
+    params.analysis.allstimimages_unconvolved = [params.stim(:).images_unconvolved]';  % time x pixels
+    params.analysis.scan_number    = [params.stim(:).scan_number]';
+catch 
+    params.analysis.allstimimages = [];
+    params.analysis.allstimimages_unconvolved = [];
+    params.analysis.scan_number = [];
+end
 
 % the stimulus generation file can specify nuisance factors (e.g. large
 % fixation changes) that should be removed from the data.
