@@ -1032,7 +1032,7 @@ for n=1:2:numel(vararg),
 %             params.analysis.stimseq = data;
 
         % [IK] added note
-        case {'note'} % can-now include prefix to the outputs
+        case {'prefix'} % can-now include prefix to the outputs
             params.analysis.prefix = data;
 
         case {'temporalmodel'} % temporal models included

@@ -2,7 +2,7 @@ function params = makeStiminMS(params,id)
 % makeStimFromScan - Make stimulus from stored image matrix for solving
 % retinotopic model or predicting BOLD response.
 %
-% params = makeStimFromScan(params,id);
+% params = makeStiminMS(params,id);
 %
 % Notes: 
 % 
@@ -90,11 +90,11 @@ function params = makeStiminMS(params,id)
 
 
 
-if notDefined('params'),
+if notDefined('params')
     error('[%s]: Need params', mfilename);
 end
 
-if notDefined('id'),
+if notDefined('id')
     id = 1;
 end
 
@@ -109,60 +109,40 @@ end
 
 % Spatially downsample the images to the X-Y grid
 I               = subSpatialDownsample(I, params);
+
+% clip prescan data
+% I.sequence      = I.sequence(:,1000*params.stim(id).prescanDuration+1:end);
+
 % Temporally downsample to 1 image per TR (by averaging filtered images)
 switch lower(params.analysis.pRFmodel{1})
+
     case {'st'}
-        
-        if strcmp(params.analysis.stimseq, 'abc')
-            stimfilename1 = ['st_seq-a_shuff-' num2str(params.stim(1).shuffled) '_stim.mat'];
-            stimfilename2 = ['st_seq-b_shuff-' num2str(params.stim(1).shuffled) '_stim.mat'];
-            stimfilename3 = ['st_seq-c_shuff-' num2str(params.stim(1).shuffled) '_stim.mat'];
-            
-%             b = load(stimfilename2);
-%             c = load(stimfilename3);
-            if isfile(stimfilename1) || isfile(stimfilename2) || isfile(stimfilename3)
-                disp('*** [abc] move on has all three cond grids ***')
-                disp('*** we actually dont need the grid in this case ***')
-                disp('*** just loading a [a] stimset ***')
-                load(stimfilename1);
+        fprintf(1,'[%s]: creating ms resolution images for stimulus %02d  ...\n', mfilename,id);
 
-
-            else
-                error('*** need to fix this later for now we need to create a,b,c grids! ***')
+        tmt = reshape(I.images,sqrt(size(I.images,1)),sqrt(size(I.images,1)),size(I.images,2));
+        seq = I.sequence;
+        offMask = zeros([size(tmt,1) size(tmt,2)]);
+        msStim = zeros(size(tmt,1),size(tmt,2),length(seq),'single');
+        for eachimage = 1:length(seq)
+            if seq(eachimage) == 0
+                msStim(:,:,eachimage) = offMask;
+            elseif seq(eachimage) ~= 0
+                msStim(:,:,eachimage) = tmt(:,:,seq(eachimage));
             end
-            images = spaceTime_stim;
-
-        else
-            stimfilename = ['st_seq-' params.analysis.stimseq '_shuff-' num2str(params.stim.shuffled) '_stim.mat'];
-            if isfile(stimfilename)
-                disp('*cst stim file exists no need to make a new one!*')
-                load(stimfilename);
-            else
-                tmt = reshape(I.images,sqrt(size(I.images,1)),sqrt(size(I.images,1)),size(I.images,2));
-
-                [temporal] = st_stimconvert(tmt, params.analysis.stimseq, ...
-                    0.033 ,30);
-                spaceTime_stim = reshape(temporal.stim, ...
-                    size(temporal.stim,1)*size(temporal.stim,2),[]);
-                save(stimfilename, ...
-                    'spaceTime_stim','temporal','-v7.3');
-            end
-            images = spaceTime_stim;
-
         end
+        msStim = reshape(msStim, size(msStim,1)*size(msStim,2),[]);
+        params.stim(id).images = msStim;
         
-        params.analysis.temporal.seqtype = params.analysis.stimseq;
-        params.analysis.temporal = temporal; 
-        params.analysis.temporal.temporalModel = params.analysis.temporalModel;
-
-
     otherwise
-        [images, params]= subTemporalDownsample(I, P, params, id);
-
+        error("Underdevelopment--- need to update to change ms to s stim")
+        
 end
 
+% ALSO change prescandur to be in ms
+params.stim(id).prescanDuration = params.stim(id).prescanDuration * 1000; 
+
 % Done. Save the images and return
-params.stim(id).images = single(images);
+% params.stim(id).images = msStim;
 fprintf(1,'[%s]: Done.\n', mfilename);
 
 return;
@@ -289,76 +269,3 @@ end
 I.images = resampled;
 
 end
-
-%------------------------------------------------------------------
-function [images, params] = subTemporalDownsample(I, P, params, id)
-%------------------------------------------------------------------
-fprintf(1,'[%s]: Averaging images within a TR...\n', mfilename);
-
-% length of 1 TR
-framePeriod = params.stim(id).framePeriod;
-
-% Scan duration (in TRs)
-nFrames = params.stim(id).nFrames;
-
-% Prescan duration (in TRs)
-if checkfields(P, 'params', 'prescanDuration')
-    % Try to get this from the scan, and then set the value in params so
-    % that it will be updated in the dataTYPES and GUI.
-    % Note that exptTools stores this in s, but the GUI stores it in frames
-    params.stim(id).prescanDuration = P.params.prescanDuration / framePeriod;
-end
-prescanDuration = params.stim(id).prescanDuration;
-
-% Total scan duration (in TRs)
-nFrames         = nFrames + prescanDuration;
-
-% Image sequence
-seq         = P.stimulus.seq;           %index to image number
-seqTiming   = P.stimulus.seqtiming;     %time in s for each image onset
-
-% Temporally downsample
-images = zeros(length(params.analysis.X), nFrames);
-
-% Specificy the onset time and offset time of each image frame
-imOnset = seqTiming;
-imOffset = shift(seqTiming, -1);
-imOffset(end) = framePeriod * nFrames;
-
-for f = 1:nFrames
-    % specify the onset time and offset time of this TR
-    frameOnset  = framePeriod * (f-1);
-    frameOffset = framePeriod * f;
-    
-    % calculate the temporal overlap of each image frame with this TR
-    imDur = min(imOffset, frameOffset) - max(imOnset, frameOnset);
-    imDur = max(imDur, 0);
-    imDur(imDur < .001) = 0;
-    img = zeros(size(I.images(:,1)));
-    % weighted average (only loop over seq we need)
-    ii = find(imDur>0); ii = ii(:)';
-    for im = ii
-        img = img + imDur(im) * I.images(:, seq(im));
-    end
-    img = img / framePeriod;
-    
-    % if images need to be flipped
-    if isfield(params.stim(id),'fliprotate'),
-        if params.stim(id).fliprotate(1),
-            img = fliplr(img);
-        end;
-        try % (use 'try' because fliprotate might be defined for just one dim) 
-            if params.stim(id).fliprotate(2),
-                img = flipud(img);
-            end;
-            if params.stim(id).fliprotate(3)~=0,
-                img = rot90(img,params.stim(id).fliprotate(3));
-            end;
-        end
-    end;
-    
-    images(:,f) = img;
-end
-
-end
-
