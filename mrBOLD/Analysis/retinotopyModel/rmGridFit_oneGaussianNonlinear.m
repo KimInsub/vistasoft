@@ -18,6 +18,7 @@ t_id           = t.dcid+1;
 % we compute mean rss but we need sum rss (old convention)
 model.rss=single(model.rss./(size(prediction,1)-size(trends,2)+1));  
 % stopidx = zeros(numel(params.analysis.x0),size(data,2));
+startfind = zeros(1,size(data,2));   
 
 %-----------------------------------
 %--- fit different receptive fields profiles
@@ -73,8 +74,9 @@ for n=1:numel(params.analysis.x0),
     %--- store data with lower rss
     %-----------------------------------
     minRssIndex = rss < model.rss;
-%     stopidx(n,:) = minRssIndex * n;
-    
+    findStop =  startfind < minRssIndex * n;
+    startfind(findStop) = n;
+
     % now update
     model.x0(minRssIndex)       = params.analysis.x0(n);
     model.y0(minRssIndex)       = params.analysis.y0(n);
@@ -86,6 +88,10 @@ for n=1:numel(params.analysis.x0),
     model.rss(minRssIndex)      = rss(minRssIndex);
     model.b([1 t_id],minRssIndex) = b(:,minRssIndex);
 end;
+failedidx = startfind==0;
+startfind(failedidx) = 1; % just give index of one, b/c betas are zero anyways
+pred_X = prediction(:,startfind,:);
+model.pred_X = pred_X;
 
 % stopidx = max(stopidx);
 % pred_X = prediction(:,stopidx,:);

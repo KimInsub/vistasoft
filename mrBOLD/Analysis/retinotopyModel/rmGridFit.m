@@ -17,9 +17,10 @@ function view = rmGridFit(view,params)
 % considerably.
 % 2008/01 SOD: split of actual fitting from rmGridFit. This allows a more
 % general use of this code with several fitting procedure options.
+% 2020/12 IK: Crossvalidation & spatiotemporal model added
 
-if notDefined('view'),   error('Need view struct'); end;
-if notDefined('params'), error('Need params'); end;
+if notDefined('view'),   error('Need view struct'); end
+if notDefined('params'), error('Need params'); end 
 
 
 %-----------------------------------
@@ -133,6 +134,7 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
     for es = 1:length(params.stim)
         params.stim(es).prediction = stimGrid(es).prediction;
     end
+    
     prediction=cat(1,stimGrid.prediction);
     clear stimGrid;
     % other nonlinear models (ex) CSS
@@ -234,15 +236,14 @@ for slice=loopSlices
                 [], testSet);
 
             % gather the prediction  data---
-            train_grid = ...
-                zeros(length(trainSet)*params.stim(1).nFrames, ...
-                size(params.stim(fold).prediction,2), ...
-                size(params.stim(fold).prediction,3));
-            
             train_grid = cell(length(trainSet),1);
             [train_grid{:}] = params.stim(trainSet).prediction;
             train_grid = cell2mat(train_grid);
             
+            test_grid = cell(length(testSet),1);
+            [test_grid{:}] = params.stim(testSet).prediction;
+            test_grid = cell2mat(test_grid);
+
             % [IK] edited to account for cross validation
             [train_trend, train_ntrends, train_dcid] = rmMakeTrends(params,trainSet);
             [test_trend, test_ntrend, test_dcid] = rmMakeTrends(params,testSet);
@@ -256,7 +257,8 @@ for slice=loopSlices
             df(fold).train_data = traindata{fold};
             df(fold).test_data = testdata{fold};
             df(fold).train_grid = train_grid;
-            
+            df(fold).test_grid = test_grid;
+
             df(fold).train_trend = train_trend;
             df(fold).test_trend = test_trend;
             
@@ -268,7 +270,7 @@ for slice=loopSlices
 
         end
         
-        % remove variables that suck up resources
+        % remove variables that suck up storage resources
         clear train_grid; 
         params.stim = rmfield( params.stim , 'prediction' ) ;
         
@@ -279,7 +281,8 @@ for slice=loopSlices
         df.test_set = '';
 
     end
-
+    
+    % SOLVE & Tidy and store data into 'df' structure
     if params.analysis.cv == 1
         numFolds = df(1).numFolds;
         for fold = 1:numFolds
@@ -291,12 +294,10 @@ for slice=loopSlices
             ntrends = df(fold).train_ntrends;
             dcid = df(fold).train_dcid;
             
-            % solve GRID! 
+            % solve GRID! - for train_data set
             model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nSlices);
             
-            
             % save and clean df output
-            
             df(fold).x0            = model{1}.x0;
             df(fold).y0            = model{1}.y0;
             df(fold).sigma         = model{1}.sigma;
@@ -324,7 +325,7 @@ for slice=loopSlices
         [trends, ntrends, dcid] = rmMakeTrends(params);
         trends = single(trends);
 
-        model = rmGridSolve(params,data,prediction,trends,ntrends,dcid);
+        model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nSlices);
         
     end
     

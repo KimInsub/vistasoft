@@ -1,4 +1,3 @@
-
 function params = rmDefineParameters(vw, varargin)
 % rmDefineParameters - define parameters for retinotopic model fit
 %

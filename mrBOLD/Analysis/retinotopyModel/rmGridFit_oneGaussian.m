@@ -18,6 +18,7 @@ t_id           = t.dcid+1;
 % we compute mean rss from the sum rss (old convention)
 % Some explanation of the divisor would be helpful here.
 model.rss = single(model.rss./(size(prediction,1)-(size(trends,2)+1)));  
+startfind = zeros(1,size(data,2));   
 
 %-----------------------------------
 %--- fit different receptive fields profiles
@@ -76,7 +77,10 @@ for n=1:numel(params.analysis.x0),
     %--- store data with lower rss
     %-----------------------------------
     minRssIndex = (rss < model.rss);  % This is where we use model.rss
-    stopidx(n,:) = minRssIndex * n;
+% % %     stopidx(n,:) = minRssIndex * n;
+
+    findStop =  startfind < minRssIndex * n;
+    startfind(findStop) = n;
 
     % now update model parameters for those cases in which the computed rss
     % is smaller than the input model.rss
@@ -90,9 +94,15 @@ for n=1:numel(params.analysis.x0),
     model.b([1 t_id],minRssIndex) = b(:,minRssIndex);
 end
 
-stopidx = max(stopidx);
-pred_X = prediction(:,stopidx,:);
+% % % stopidx = max(stopidx);
+% % % pred_X = prediction(:,stopidx,:);
+% % % model.pred_X = pred_X;
+
+failedidx = startfind==0;
+startfind(failedidx) = 1; % just give index of one, b/c betas are zero anyways
+pred_X = prediction(:,startfind,:);
 model.pred_X = pred_X;
+
 %warning('on', 'MATLAB:lscov:RankDefDesignMat')
 
 % Under some conditions, the grid fit never returns an acceptable fit, For
