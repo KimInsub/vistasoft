@@ -180,6 +180,8 @@ try
     params.analysis.allstimimages_unconvolved = [params.stim(:).images_unconvolved]';  % time x pixels
     params.analysis.scan_number    = [params.stim(:).scan_number]';
 catch 
+    warning('[%s]: Potential outof memory issue.',...
+        mfilename);
     params.analysis.allstimimages = [];
     params.analysis.allstimimages_unconvolved = [];
     params.analysis.scan_number = [];

@@ -205,7 +205,7 @@ for slice=loopSlices
     %-----------------------------------
  
     
-    % check crossValidation flag
+    % Prepare data structure for cross-validation
     if params.analysis.cv == 1
         
         % reset the prediction before..
@@ -273,7 +273,14 @@ for slice=loopSlices
         % remove variables that suck up storage resources
         clear train_grid; 
         params.stim = rmfield( params.stim , 'prediction' ) ;
+%         params.stim.images_org = [];
+%         params.analysis.allstimimages = [];
+%         params.analysis.allstimimages_unconvolved = [];
         
+        params.stim = rmfield( params.stim , 'images_org' ) ;
+        params.analysis = rmfield( params.analysis , 'allstimimages' ) ;
+        params.analysis = rmfield( params.analysis , 'allstimimages_unconvolved' ) ;
+
     else
         [data, params] = rmLoadData(view, params, slice,...
             params.analysis.coarseToFine);
