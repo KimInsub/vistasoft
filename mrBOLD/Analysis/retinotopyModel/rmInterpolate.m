@@ -108,6 +108,37 @@ for n=1:numel(model),
     model{n} = rmSet(model{n},'b',newBeta);
 end;
 
+% separate loop for the betas, because they are saved in a different way
+for n=1:numel(model),
+    % reset for different models (should be the same i think)
+    fulval2 = myzeros;
+    val2 = double(rmGet(model{n},'pred_X'));
+    npredX  = size(val2,3);
+    nchan = size(val2,4);
+    newpredX = zeros(size(val2,1),numel(coarseIndex),npredX,nchan);
+    
+    for chan = 1:nchan
+        for ii=1:npredX
+            if doROI
+                fulval2(inROI(coarseIndex)) = double(val2(:,:,ii));
+            else
+                fulval2(coarseIndex) = double(val2(:,:,ii,chan));
+            end
+            newval2 = myinterp(fulval2,withData,toInterp,view,grayConMat);
+            
+            % if roi we should store the roi voxels only otherwise store
+            % the whole thing
+            if doROI
+                newpredX(:,:,ii,chan) = newval2(inROI);
+            else
+                newpredX(:,:,ii,chan) = newval2;
+            end
+        end
+    end
+    model{n} = rmSet(model{n},'pred_x',newpredX);
+end
+
+
 return;
 %---------------------------------------
 

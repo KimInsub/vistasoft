@@ -228,12 +228,12 @@ for slice=loopSlices
             testSet  =  find(cv_split.test(fold));
             
             % concat and load  traning     data---
-            [traindata{fold},params] = rmLoadData(view, params, slice, [],...
-                [], trainSet);
-            
+            [traindata{fold},params] = rmLoadData(view, params, slice, ...
+                params.analysis.coarseToFine, [], trainSet);
+           % [data, params] = rmLoadData(view, params, slice,...
             % concat and load  testing     data---
-            [testdata{fold},params] = rmLoadData(view, params, slice, [],...
-                [], testSet);
+            [testdata{fold},params] = rmLoadData(view, params, slice, ...
+                params.analysis.coarseToFine, [], testSet);
 
             % gather the prediction  data---
             train_grid = cell(length(trainSet),1);
