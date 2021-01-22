@@ -304,6 +304,10 @@ for slice=loopSlices
             % solve GRID! - for train_data set
             model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nSlices);
             
+            if params.analysis.coarseToFine
+                model = rmInterpolate(view, model, params);
+            end
+            
             % save and clean df output
             df(fold).x0            = model{1}.x0;
             df(fold).y0            = model{1}.y0;

@@ -1,5 +1,8 @@
-function stimGrid = rmGridstPred(params)
+function stimGrid = rmGridstPred(params,saveFlag)
 %% get Variables
+if notDefined('saveFlag')
+    saveFlag =1;
+end
 
 c = Constants.getTemporalParams.temporalParams;
 temp_type = params.analysis.temporalModel;
@@ -36,7 +39,11 @@ for es = 1:length(params.stim)
 
     allstimimages = params.stim(es).images_unconvolved;
     t = 0.001 : 0.001 : size(allstimimages,2)/fs;
+    
+   
     rsp =st_tModel(temp_type,temporal_param, allstimimages, t); % rsp = time (ms) x space
+    
+    
     fprintf(1,'[%s]:Making %d model samples:',mfilename,n);
     prediction = zeros(size(rsp{1},1)/fs,n,num_channels,'single'); % prediction = time (s) x space
     % loop over grid
@@ -96,9 +103,10 @@ for es = 1:length(params.stim)
     fprintf(1, 'Done[%d min].\t(%s)\n', round(toc/60), datestr(now));
     drawnow;
 end
-    
-save(params.analysis.predFile, 'stimGrid', '-v7.3');
-
+   
+if saveFlag == 1
+    save(params.analysis.predFile, 'stimGrid', '-v7.3');
+end
 
 end
 
