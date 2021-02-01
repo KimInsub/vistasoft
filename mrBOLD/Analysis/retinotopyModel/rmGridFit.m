@@ -123,11 +123,11 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
     % cache grid -- as it takes very very long time to generate
     % if we already created the gird, simply just load it!
     % stimGrid, prediction, grid are the same thing
-    if isfile(params.analysis.predFile)
+    if exist(params.analysis.predFile, 'file')
         disp('***st predfile exists --- loading...')
         disp(params.analysis.predFile)
         load(params.analysis.predFile);
-    elseif ~isfile(params.analysis.predFile)
+    else
         stimGrid = rmGridstPred(params);
     end
     % assign each grid to params
