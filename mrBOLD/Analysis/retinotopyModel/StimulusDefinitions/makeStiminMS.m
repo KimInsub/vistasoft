@@ -106,7 +106,7 @@ end
 
 % Make a sampling grid
 [x, y, params]  = subSamplingGrid (params);
-
+ 
 % Spatially downsample the images to the X-Y grid
 I               = subSpatialDownsample(I, params);
 
@@ -118,7 +118,6 @@ switch lower(params.analysis.pRFmodel{1})
 
     case {'st'}
         fprintf(1,'[%s]: creating ms resolution images for stimulus %02d  ...\n', mfilename,id);
-
         tmt = reshape(I.images,sqrt(size(I.images,1)),sqrt(size(I.images,1)),size(I.images,2));
         seq = I.sequence;
         offMask = zeros([size(tmt,1) size(tmt,2)]);
@@ -134,7 +133,7 @@ switch lower(params.analysis.pRFmodel{1})
         params.stim(id).images = msStim;
         
     otherwise
-        error("Underdevelopment--- need to update to change ms to s stim")
+        error('Underdevelopment--- need to update to change ms to s stim')
         
 end
 
