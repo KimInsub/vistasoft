@@ -660,11 +660,12 @@ else
     params.analysis.doDetrend = 1;
 end
 
-if exist(stRootPath,'file') > 0
-    params.analysis.predDir = Constants.getDir.grid_dir;
-    mkdir(params.analysis.predDir)
+if ~isfield(params.analysis,'predDir')
+%     params.analysis.predDir = Constants.getDir.grid_dir;
+    params.analysis.predDir = sprintf('./%s/gridPred',params.analysis.viewType);
+    if ~exist(params.analysis.predDir, 'dir'); mkdir(params.analysis.predDir); end
 else
-    params.analysis.predDir = '../gridPred/';
+    % params.analysis.predDir = '../gridPred/';
 end
 
 %[IK] removed shuffled format & params.analysis.stimseq
