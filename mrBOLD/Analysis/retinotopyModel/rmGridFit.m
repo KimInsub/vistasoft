@@ -301,6 +301,12 @@ for slice=loopSlices
             ntrends = df(fold).train_ntrends;
             dcid = df(fold).train_dcid;
             
+            % don't forget to detrend
+            trendBetas = pinv(trends)*data;
+            if params.analysis.doDetrend
+                data = data - trends*trendBetas;
+            end
+            
             % solve GRID! - for train_data set
             model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nSlices);
             
@@ -335,7 +341,12 @@ for slice=loopSlices
         %-----------------------------------
         [trends, ntrends, dcid] = rmMakeTrends(params);
         trends = single(trends);
-
+        
+        % don't forget to detrend
+        trendBetas = pinv(trends)*data;
+        if params.analysis.doDetrend
+            data = data - trends*trendBetas;
+        end
         model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nSlices);
         
     end
