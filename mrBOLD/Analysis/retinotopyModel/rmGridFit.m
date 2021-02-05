@@ -310,6 +310,7 @@ for slice=loopSlices
             % solve GRID! - for train_data set
             model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nSlices);
             
+            % recreate complete model if we used coarse sampling
             if params.analysis.coarseToFine
                 model = rmInterpolate(view, model, params);
             end
@@ -349,19 +350,16 @@ for slice=loopSlices
         end
         model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nSlices);
         
+        % recreate complete model if we used coarse sampling
+        if params.analysis.coarseToFine
+            model = rmInterpolate(view, model, params);
+        end
     end
     
     
     
 end
 
-
-%-----------------------------------
-% recreate complete model if we used coarse sampling
-%-----------------------------------
-if params.analysis.coarseToFine
-    model = rmInterpolate(view, model, params);
-end
 
 %-----------------------------------
 % get Timecouse results
