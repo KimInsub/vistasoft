@@ -234,7 +234,11 @@ for slice=loopSlices
             % concat and load  testing     data---
             [testdata{fold},params] = rmLoadData(view, params, slice, ...
                 params.analysis.coarseToFine, [], testSet);
-
+                  
+         
+            
+            
+            
             % gather the prediction  data---
             train_grid = cell(length(trainSet),1);
             [train_grid{:}] = params.stim(trainSet).prediction;
@@ -244,18 +248,40 @@ for slice=loopSlices
             [test_grid{:}] = params.stim(testSet).prediction;
             test_grid = cell2mat(test_grid);
 
-            % [IK] edited to account for cross validation
+            % edited to account for cross validation
             [train_trend, train_ntrends, train_dcid] = rmMakeTrends(params,trainSet);
             [test_trend, test_ntrend, test_dcid] = rmMakeTrends(params,testSet);
 
+            
+            % save some raw unsmoothed values for future usage 
+            [traindata_raw{fold},params] = rmLoadData(view, params, slice, ...
+                [], [], trainSet);
+            [testdata_raw{fold},params] = rmLoadData(view, params, slice, ...
+                [], [], testSet);
+            
+            if params.analysis.doDetrend
+                
+                trendBetas1 = pinv(train_trend)*traindata_raw{fold};
+                trendBetas2 = pinv(test_trend)*testdata_raw{fold};
+
+                traindata_raw{fold} = traindata_raw{fold} - train_trend*trendBetas1;
+                testdata_raw{fold} = testdata_raw{fold} - test_trend*trendBetas2;
+            end
+            
             
             % save cv information to a strcuct
             df(fold).info = cv_split;
             df(fold).numFolds = numFolds;
             df(fold).train_set = trainSet;
             df(fold).test_set = testSet;
+            
             df(fold).train_data = traindata{fold};
             df(fold).test_data = testdata{fold};
+            
+            df(fold).train_data_raw = traindata_raw{fold};
+            df(fold).test_data_raw = testdata_raw{fold};
+
+            
             df(fold).train_grid = train_grid;
             df(fold).test_grid = test_grid;
 
