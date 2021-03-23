@@ -233,9 +233,12 @@ function [x, y, params] = subSamplingGrid (params)
 % files. So safer to set it manually in the GUI.
 
 nSamples = params.analysis.numberStimulusGridPoints;
-mygrid = -params.analysis.fieldSize:params.analysis.sampleRate:params.analysis.fieldSize;
+% mygrid = -params.analysis.fieldSize:params.analysis.sampleRate:params.analysis.fieldSize;
+% 
+% [x,y]=meshgrid(mygrid,mygrid);
 
-[x,y]=meshgrid(mygrid,mygrid);
+tmp = single( linspace(-params.analysis.fieldSize, params.analysis.fieldSize, 1+nSamples*2) );
+[x,y] = meshgrid(tmp,tmp);
 
 % Update the sampling grid to reflect the sample points used.
 params.analysis.X = x(:);
@@ -243,7 +246,7 @@ params.analysis.Y = y(:);
 
 % Verify that the grid is the expected size.
 if length(params.analysis.X) ~= (1+nSamples*2)^2,
-    error('[%s]: error in grid creation', mfilename);
+   error('[%s]: error in grid creation', mfilename);
 end
 
 end
