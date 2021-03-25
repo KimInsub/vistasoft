@@ -333,9 +333,12 @@ for slice=loopSlices
                 data = data - trends*trendBetas;
             end
             
+%             smalldata = data(:,tcoord:tcoord+10);
+%             model = rmGridSolve(params,smalldata,prediction,trends,ntrends,dcid,slice,nSlices);
+            
             % solve GRID! - for train_data set
             model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nSlices);
-            
+
             % recreate complete model if we used coarse sampling
             if params.analysis.coarseToFine
                 model = rmInterpolate(view, model, params);

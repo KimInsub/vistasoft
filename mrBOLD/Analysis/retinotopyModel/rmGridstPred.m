@@ -59,6 +59,9 @@ for es = 1:length(params.stim)
         
         % convolve rf with stimulus for each t-channel
         for cc=1:num_channels
+            pred=[];
+            pred_cell=[];
+
             pred = rsp{cc}*rf;
             % apply css if needed
             pred = bsxfun(@power, pred, params.analysis.exponent(s(n):s(n+1)-1)');

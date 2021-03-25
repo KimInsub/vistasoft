@@ -133,9 +133,12 @@ for n=1:length(params.stim)
     
     % keep original image sequence, just in case we want to view it later
     params.stim(n).images_org = params.stim(n).images;
+
     
-    % now scale amplitude according to the sample rate:
-    params.stim(n).images = params.stim(n).images.*(params.analysis.sampleRate.^2);
+    % [IK] No longer doing image amplitude scaling because I now have
+    % normalizations within each model
+    %     % now scale amplitude according to the sample rate:
+    %     params.stim(n).images = params.stim(n).images.*(params.analysis.sampleRate.^2);
     
     % jitter images to account for eye movement if offset data exists
     params.stim(n) = rmJitterImages(params.stim(n), params);
