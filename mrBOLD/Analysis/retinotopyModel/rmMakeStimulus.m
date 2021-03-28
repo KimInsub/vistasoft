@@ -160,8 +160,10 @@ for n=1:length(params.stim)
     % store a copy of the images that do not get convolved with hRF
     params.stim(n).images_unconvolved = params.stim(n).images_org;
     
+    % [IK] No longer doing image amplitude scaling because I now have
+    % normalizations within each model
     % now scale amplitude according to the sample rate:
-    params.stim(n).images_unconvolved = params.stim(n).images_unconvolved.*(params.analysis.sampleRate.^2);
+    %params.stim(n).images_unconvolved = params.stim(n).images_unconvolved.*(params.analysis.sampleRate.^2);
     
     % limit to actual MR recording.
     params.stim(n).images_unconvolved = params.stim(n).images_unconvolved(:, params.stim(n).prescanDuration+1:end);
