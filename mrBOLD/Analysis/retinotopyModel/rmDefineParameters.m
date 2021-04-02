@@ -663,7 +663,6 @@ end
 params.analysis.predDir = Constants.getDir.grid_dir;
 mkdir(params.analysis.predDir)
 
-
 %[IK] removed shuffled format & params.analysis.stimseq
 params.analysis.predFile = ...
     [params.analysis.predDir ...
