@@ -38,7 +38,6 @@ for cc = 1:nChan
 
     end
 
-%     pred = (stim{cc}*RF);
 
     pred = {double(pred)};
     

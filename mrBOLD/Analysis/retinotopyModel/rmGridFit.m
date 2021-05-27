@@ -282,8 +282,8 @@ for slice=loopSlices
             df(fold).test_data_raw = testdata_raw{fold};
 
             
-            df(fold).train_grid = train_grid;
-            df(fold).test_grid = test_grid;
+%             df(fold).train_grid = train_grid;
+%             df(fold).test_grid = test_grid;
 
             df(fold).train_trend = train_trend;
             df(fold).test_trend = test_trend;
@@ -327,11 +327,11 @@ for slice=loopSlices
             ntrends = df(fold).train_ntrends;
             dcid = df(fold).train_dcid;
             
-            % don't forget to detrend
-            trendBetas = pinv(trends)*data;
-            if params.analysis.doDetrend
-                data = data - trends*trendBetas;
-            end
+            % don't forget to detrend (this is done within gridsolve)
+%             trendBetas = pinv(trends)*data;
+%             if params.analysis.doDetrend
+%                 data = data - trends*trendBetas;
+%             end
             
 %             smalldata = data(:,tcoord:tcoord+10);
 %             model = rmGridSolve(params,smalldata,prediction,trends,ntrends,dcid,slice,nSlices);
@@ -388,6 +388,21 @@ for slice=loopSlices
     
     
 end
+
+
+
+%-----------------------------------
+% save and return output (if run interactively)
+%-----------------------------------
+rmFile = rmSave(view,model,params,1,'gFit',df);
+view = viewSet(view,'rmFile',rmFile);
+
+ 
+% that's it
+return;
+%-----------------------------------
+
+
 
 
 %-----------------------------------
@@ -450,17 +465,4 @@ end
 % 
 % end
 % 
-
-
-
-%-----------------------------------
-% save and return output (if run interactively)
-%-----------------------------------
-rmFile = rmSave(view,model,params,1,'gFit',df);
-view = viewSet(view,'rmFile',rmFile);
-
- 
-% that's it
-return;
-%-----------------------------------
 

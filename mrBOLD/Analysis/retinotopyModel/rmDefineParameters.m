@@ -612,13 +612,13 @@ end
 params.analysis.fmins.options = optimset('fmincon');
 
 % Display iterations?
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','iter'); %'none','iter','final'
 
 % Maximum iterations. If set to zero it does not refine the parameters but
 % simply refits. This is useful to remove 'coarse-blurred' estimates below
 % a certain threshold.
 % GLU params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',25); % #
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',500); % #
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',100); % #
 
 % Precision of output (degrees). That is, stop if the estimate is
 % within TolX degrees:
