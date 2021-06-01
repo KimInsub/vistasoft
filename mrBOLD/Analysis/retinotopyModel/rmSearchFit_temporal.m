@@ -12,9 +12,11 @@ function model = rmSearchFit_temporal(model, data, params, wProcess, t,trainSet)
 
 % fminsearch options
 searchOptions = params.analysis.fmins.options;
+
+
 fprec = 1e-6;
 fmin_options = optimoptions('fmincon', 'Display', 'iter', ...
-    'StepTolerance', fprec, 'UseParallel', true);
+    'StepTolerance', fprec, 'UseParallel', false);
 
 expandRange   = params.analysis.fmins.expandRange;
 
@@ -83,9 +85,15 @@ t_id     = t.dcid+num_channels;
 %-----------------------------------
 % Go for each voxel
 %-----------------------------------
-progress = 0;tic;
-for ii = 1:numel(wProcess),
-    if progress==0,
+% progress = 0;
+tic;
+parfor ii = 1:numel(wProcess)
+  
+    if ii == 1
+        progress = 0;
+    end
+    
+    if progress==0
         esttime = toc.*10;
         if floor(esttime./3600)>0
             fprintf(1,'[%s]:Estimated processing time: %d voxels: %d hours.\n',...
@@ -112,6 +120,7 @@ for ii = 1:numel(wProcess),
 %     vData = vData(trainSet);
     
     % create objective function
+    fprintf(1,'[%s]:creating nonlinear obj_fun:',mfilename);
      [comp_ws, conv_nb, pred_bs, obj_fun]  = st_obj_fun_2ch_exp_sig(stim,vData,params.analysis.X,params.analysis.Y);
     
     
@@ -223,72 +232,77 @@ for ii = 1:numel(wProcess),
     b    = pinv(X)*cell2mat(vData);
     rss  = norm(cell2mat(vData)-X*b).^2;
     
+    
+    output(ii).params = outParams;
+    output(ii).rss    = rss;
+    output(ii).b      = b;
+    output(ii).preds  = preds;
     %%  
     % store results only if the first beta is positive, somehow fmincon
     % outputs negative fits. If the fit is negative keep old (grid) fit. We
     % do adjust the rss, so it won't be accidentally counted as a 'good'
     % fit.
-    if num_channels == 1
-        if b(1)>0
-            model.x0(vi)         = outParams(1);
-            model.y0(vi)         = outParams(2);
-            model.s(vi)          = outParams(3);
-            model.s_major(vi)    = outParams(3);
-            model.s_minor(vi)    = outParams(3);
-            model.s_theta(vi)    = 0;
-            model.exponent(vi)   = 1;
-%             model.exponent(vi)   = outParams(4);
-            model.rss(vi)        = rss;
-            model.b([1 t_id],vi) = b;
-            model.pred_X(:,vi,1) = preds(:,1);
-            
-        else
-            % change the percent variance explained to be just under the
-            % current vethresh. So it counts as a 'coarse'-fit but can still be
-            % included in later 'fine'-fits
-            model.rss(vi)  = (1-max((vethresh-0.01),0)).*model.rawrss(vi);
-            nNegFit = nNegFit + 1;
-        end
-    elseif num_channels == 2
-        if b(1)>0 && b(2)>0
-            model.x0(vi)         = outParams(1);
-            model.y0(vi)         = outParams(2);
-            model.s(vi)          = outParams(3);
-            model.s_major(vi)    = outParams(3);
-            model.s_minor(vi)    = outParams(3);
-            model.s_theta(vi)    = 0;
-            model.exponent(vi)   = 1;
-            model.tau_s(vi)      = outParams(4);
-            model.tau_ae(vi)     = outParams(5)*10000;
-            model.Lp(vi)         = outParams(6);
-            model.Kp(vi)         = outParams(7);
-            model.Kn(vi)         = outParams(8);
-            model.weight(vi)     = outParams(9);
-
-%             model.exponent(vi)   = outParams(4);
-            model.rss(vi)        = rss;
-            model.b([1 2 t_id],vi) = b;
-            model.pred_X(:,vi,1) = preds(:,1);
-            model.pred_X(:,vi,2) = preds(:,2);
-            
-        else
-            % change the percent variance explained to be just under the
-            % current vethresh. So it counts as a 'coarse'-fit but can still be
-            % included in later 'fine'-fits
-            model.rss(vi)  = (1-max((vethresh-0.01),0)).*model.rawrss(vi);
-            nNegFit = nNegFit + 1;
-        end
-    end
+%     if num_channels == 1
+%         if b(1)>0
+%             model.x0(vi)         = outParams(1);
+%             model.y0(vi)         = outParams(2);
+%             model.s(vi)          = outParams(3);
+%             model.s_major(vi)    = outParams(3);
+%             model.s_minor(vi)    = outParams(3);
+%             model.s_theta(vi)    = 0;
+%             model.exponent(vi)   = 1;
+% %             model.exponent(vi)   = outParams(4);
+%             model.rss(vi)        = rss;
+%             model.b([1 t_id],vi) = b;
+%             model.pred_X(:,vi,1) = preds(:,1);
+%             
+%         else
+%             % change the percent variance explained to be just under the
+%             % current vethresh. So it counts as a 'coarse'-fit but can still be
+%             % included in later 'fine'-fits
+%             model.rss(vi)  = (1-max((vethresh-0.01),0)).*model.rawrss(vi);
+%             nNegFit = nNegFit + 1;
+%         end
+%     elseif num_channels == 2
+%         if b(1)>0 && b(2)>0
+%             model.x0(vi)         = outParams(1);
+%             model.y0(vi)         = outParams(2);
+%             model.s(vi)          = outParams(3);
+%             model.s_major(vi)    = outParams(3);
+%             model.s_minor(vi)    = outParams(3);
+%             model.s_theta(vi)    = 0;
+%             model.exponent(vi)   = 1;
+%             model.tau_s(vi)      = outParams(4);
+%             model.tau_ae(vi)     = outParams(5)*10000;
+%             model.Lp(vi)         = outParams(6);
+%             model.Kp(vi)         = outParams(7);
+%             model.Kn(vi)         = outParams(8);
+%             model.weight(vi)     = outParams(9);
+% 
+% %             model.exponent(vi)   = outParams(4);
+%             model.rss(vi)        = rss;
+%             model.b([1 2 t_id],vi) = b;
+%             model.pred_X(:,vi,1) = preds(:,1);
+%             model.pred_X(:,vi,2) = preds(:,2);
+%             
+%         else
+%             % change the percent variance explained to be just under the
+%             % current vethresh. So it counts as a 'coarse'-fit but can still be
+%             % included in later 'fine'-fits
+%             model.rss(vi)  = (1-max((vethresh-0.01),0)).*model.rawrss(vi);
+%             nNegFit = nNegFit + 1;
+%         end
+%     end
     
 end
 
 % end time monitor
 et  = toc;
-if floor(et/3600)>0,
+if floor(et/3600)>0
     fprintf(1,'Done [%d hours].\n',ceil(et/3600));
 else
     fprintf(1,'Done [%d minutes].\n',ceil(et/60));
-end;
+end
 fprintf(1,'[%s]:Removed negative fits: %d (%.1f%%).\n',...
     mfilename,nNegFit,nNegFit./numel(wProcess).*100);
 return;
