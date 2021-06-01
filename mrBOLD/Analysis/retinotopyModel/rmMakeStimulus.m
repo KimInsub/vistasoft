@@ -133,32 +133,40 @@ for n=1:length(params.stim)
     
     % keep original image sequence, just in case we want to view it later
     params.stim(n).images_org = params.stim(n).images;
+
     
-    % now scale amplitude according to the sample rate:
-    params.stim(n).images = params.stim(n).images.*(params.analysis.sampleRate.^2);
+    % [IK] No longer doing image amplitude scaling because I now have
+    % normalizations within each model
+    %     % now scale amplitude according to the sample rate:
+    %     params.stim(n).images = params.stim(n).images.*(params.analysis.sampleRate.^2);
     
     % jitter images to account for eye movement if offset data exists
     params.stim(n) = rmJitterImages(params.stim(n), params);
     
-    % now convolve with HRF
-    params.stim(n).images = filter(params.analysis.Hrf{n}, 1, params.stim(n).images'); % images: pixels by time (so images': time x pixels)
-    
-    % limit to actual MR recording.
-    params.stim(n).images = params.stim(n).images(params.stim(n).prescanDuration+1:end,:);
-
-    % and time averaging
-    params.stim(n).images = rmAverageTime(params.stim(n).images, ...
-                                          params.stim(n).nUniqueRep);
-
-    % rotate so we can easily create an average stimulus image matrix
-    params.stim(n).images = params.stim(n).images';
-
+    if  strcmp(params.analysis.pRFmodel{1},'st')
+        params.stim(n).images =[];
+    else
+        % now convolve with HRF
+        params.stim(n).images = filter(params.analysis.Hrf{n}, 1, params.stim(n).images'); % images: pixels by time (so images': time x pixels)
+        
+        % limit to actual MR recording.
+        params.stim(n).images = params.stim(n).images(params.stim(n).prescanDuration+1:end,:);
+        
+        % and time averaging
+        params.stim(n).images = rmAverageTime(params.stim(n).images, ...
+            params.stim(n).nUniqueRep);
+        
+        % rotate so we can easily create an average stimulus image matrix
+        params.stim(n).images = params.stim(n).images';
+    end
     %*********************************************************************
     % store a copy of the images that do not get convolved with hRF
     params.stim(n).images_unconvolved = params.stim(n).images_org;
     
+    % [IK] No longer doing image amplitude scaling because I now have
+    % normalizations within each model
     % now scale amplitude according to the sample rate:
-    params.stim(n).images_unconvolved = params.stim(n).images_unconvolved.*(params.analysis.sampleRate.^2);
+    %params.stim(n).images_unconvolved = params.stim(n).images_unconvolved.*(params.analysis.sampleRate.^2);
     
     % limit to actual MR recording.
     params.stim(n).images_unconvolved = params.stim(n).images_unconvolved(:, params.stim(n).prescanDuration+1:end);

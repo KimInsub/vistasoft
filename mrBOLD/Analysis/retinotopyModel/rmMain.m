@@ -160,6 +160,13 @@ switch lower(wSearch)
         fprintf(1,'[%s]: * WARNING:Resetting fitting parameters! *\n',mfilename);
         fprintf(1,'[%s]: *****************************************\n',mfilename);
         view = rmSearchFit(view,params);
+        
+    case {'8'}
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+        fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+
+        view = rm_st_SearchFit(view,params);
 
         
     otherwise

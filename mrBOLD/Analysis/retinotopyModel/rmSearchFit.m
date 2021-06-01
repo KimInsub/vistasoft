@@ -102,7 +102,7 @@ end
 
 % save rmFile so we know which file was used. we do this by growing the
 % variable:
-params.matFileName = {rmFile params.matFileName{:}};
+% params.matFileName = {rmFile params.matFileName{:}};
 
 % Load previous model, but not params since these are allowed to be
 % redefined every time. It is the model that is transferable
@@ -110,10 +110,11 @@ params.matFileName = {rmFile params.matFileName{:}};
 % parameters.
 % actually we are going to load it so we can use the "grid" to confine our
 % nonlinear minimization.
-
-tmp = load(rmFile);
-% tmp = load('/Users/insubkim/Documents/experiment/spatiotemporal/cstmodel/simulations/st_120b1_2ch-exp-sig/Inplane/Original/tmpResults-gFit.mat')
+tempName = [params.matFileName{1} '-gFit.mat'];
+rmFile = fullfile('./Gray/MotionComp_RefScan1',tempName);
+tmp = load(rmFile,'model','df');
 model = tmp.model;
+df    = tmp.df;
 
 % roi check
 switch lower(params.wData),
@@ -185,9 +186,9 @@ drawnow;
 % go loop over slices
 for slice=loopSlices,
 
-    if contains(params.analysis.temporalModel,'2ch')
-        nchan = 2;
-    end
+%     if contains(params.analysis.temporalModel,'2ch')
+%         nchan = 2;
+%     end
     %-----------------------------------
     % now we extract only the data from that slice and put it in a
     % temporary structure that will be modified throughout.
@@ -284,224 +285,496 @@ for slice=loopSlices,
     %-----------------------------------
     % Development Stage
     %-----------------------------------
-    p2.analysis.calcPC=1;
-    
-    
-    if contains(params.analysis.predFile,'abc') 
-%         [trainSet, testSet]=st_getScanList(p2.stim(1).shuffled);
+    % Prepare data structure for cross-validation
+    if params.analysis.cv == 1
         
-[trainSet, testSet]=st_getScanList(params.stim(1).shuffled,params.stim.split);
+        % we are doing cross validation here
         
+        % perfom k-fold (3 fold in current example) cross valiation
+        rng('default') % For reproducibility
         
+        nStim = length(params.stim);
+        cv_split = cvpartition(nStim,'KFold',3);
+        numFolds = cv_split.NumTestSets;
+        
+        % create: data{fold}, prediction{fold}
+        % train_grid (predictions) => Time X GRID X Channel
+        % data => Time X Voxel
+        % prediction and data should match in their time domain
+        for fold = 1:numFolds
+            trainSet = find(cv_split.training(fold));
+            testSet  =  find(cv_split.test(fold));
+            
+            % concat and load  traning     data---
+            [traindata{fold},params] = rmLoadData(view, params, slice, ...
+                coarse, [], trainSet);
+           % [data, params] = rmLoadData(view, params, slice,...
+            % concat and load  testing     data---
+            [testdata{fold},params] = rmLoadData(view, params, slice, ...
+                coarse, [], testSet);
+                  
 
-        % hack to fool mrVista that I have multiple runs..
-        for pp = 1:18
-            p2.stim(pp).nUniqueRep =1;
-            p2.stim(pp).nFrames = p2.stim(1).nFrames;
+
+            % edited to account for cross validation
+            [train_trend, train_ntrends, train_dcid] = rmMakeTrends(params,trainSet);
+            [test_trend, test_ntrend, test_dcid] = rmMakeTrends(params,testSet);
+
+            
+            % save some raw unsmoothed values for future usage 
+            [traindata_raw{fold},params] = rmLoadData(view, params, slice, ...
+                coarse, [], trainSet);
+            [testdata_raw{fold},params] = rmLoadData(view, params, slice, ...
+                coarse, [], testSet);
+            
+            if params.analysis.doDetrend
+                
+                trendBetas1 = pinv(train_trend)*traindata_raw{fold};
+                trendBetas2 = pinv(test_trend)*testdata_raw{fold};
+
+                traindata_raw{fold} = traindata_raw{fold} - train_trend*trendBetas1;
+                testdata_raw{fold} = testdata_raw{fold} - test_trend*trendBetas2;
+            end
+            
+            
+            % save cv information to a strcuct
+            df(fold).info = cv_split;
+            df(fold).numFolds = numFolds;
+            df(fold).train_set = trainSet;
+            df(fold).test_set = testSet;
+            
+            df(fold).train_data = traindata{fold};
+            df(fold).test_data = testdata{fold};
+            
+            df(fold).train_data_raw = traindata_raw{fold};
+            df(fold).test_data_raw = testdata_raw{fold};
+
+            df(fold).train_trend = train_trend;
+            df(fold).test_trend = test_trend;
+            
+            df(fold).train_ntrends = train_ntrends;
+            df(fold).test_ntrend = test_ntrend;
+            
+            df(fold).train_dcid = train_dcid;
+            df(fold).test_dcid = test_dcid;
+
         end
-        [data1] = rmLoadData(view, p2, slice, [],...
-            [], model{1}.tc.train_set(1:3));
-        [data2] = rmLoadData(view, p2, slice, [],...
-            [], model{1}.tc.train_set(4:end));
+        
+        % remove variables that suck up storage resources
+%         clear train_grid; 
+%         params.stim = rmfield( params.stim , 'prediction' ) ;
+%         params.stim.images_org = [];
+%         params.analysis.allstimimages = [];
+%         params.analysis.allstimimages_unconvolved = [];
+        
+%         params.stim = rmfield( params.stim , 'images_org' ) ;
+%         params.analysis = rmfield( params.analysis , 'allstimimages' ) ;
+%         params.analysis = rmfield( params.analysis , 'allstimimages_unconvolved' ) ;
 
-        data=(data1+data2)/2;
-
-        
-%         [valdata] = rmLoadData(view, p2, slice, [],...
-%             [], model{1}.tc.test_set);
-        
-        p2.stim(2:end) = [];
-        p2.stim(1).nFrames = size(data,1);
-        [trends, nTrends, dcid] = rmMakeTrends(p2);
-        
-        tc.train_set = model{1}.tc.train_set;
-        tc.test_set = model{1}.tc.train_set;
-        tc.split = params.stim.split;         
     else
-        data     = rmLoadData(view,p2,slice,coarse);
+        [data, params] = rmLoadData(view, params, slice,...
+            params.analysis.coarseToFine);
+        df.train_set = '';
+        df.test_set = '';
 
     end
     
-    
-    % check to see that all t-series data contain finite numbers
-    tmp      = sum(data(:,wProcess));
-    ok       = ~isnan(tmp);
-    wProcess = wProcess(ok); clear tmp ok;
-    
-    % limit to voxels that will be processed
-    data     = data(:,wProcess);
-    % detrend
-    trendBetas = pinv(single(trends))*data;
-    if params.analysis.doDetrend 
-        data       = data - trends*trendBetas;
-    end
-    
-    if params.analysis.dc.datadriven
-        [data, trendBetas] = rmEstimateDC(data,trendBetas,params,trends,dcid);
-    end
-    
-    % decimate? Note that decimated trends are stored in a new variable,
-    % sliceTrends, because if we loop across multiple slices, we do not
-    % want trends to be re-decimated in each loop
-    data        = rmDecimate(data, doDecimate);
-    sliceTrends = rmDecimate(trends, doDecimate);
-    
-    % put in number of data points. Right now this is the same as
-    % size(data,1)
-    for mm = 1:numel(model),
-        model{mm} = rmSet(model{mm},'npoints',size(data,1));
-    end;
-   
-
-    % store rawrss: this may be different from the one already there because
-    % of the coarse-to-fine approach (i.e. smoothing). Please note that this
-    % rawrss is the rss of the raw timeseries with the trends removed (i.e.
-    % high-pass filtered.
-    for n=1:numel(s),
-        s{n}.rawrss(wProcess) = sum(double(data).^2);
-    end;
-    
-    % decimate predictions?
-    %   If we have a nonlinear model, then we cannot pre-convolve the
-    %   stimulus with the hRF. Instead we make predictions with the
-    %   unconvolved images and then convolve with the hRF afterwards
-    if ~checkfields(params, 'analysis', 'nonlinear') || ~params.analysis.nonlinear
-        %�for a lineaer model, use the pre-convolved stimulus images
-        original_allstimimages = params.analysis.allstimimages;
-        params.analysis.allstimimages = rmDecimate(params.analysis.allstimimages,...
-            doDecimate);
-    else
-        % for a nonlinear model, use the unconvolved images
-        params.analysis.allstimimages_unconvolved = rmDecimate(...
-            params.analysis.allstimimages_unconvolved, doDecimate);
+    % SOLVE & Tidy and store data into 'df' structure
+    if params.analysis.cv == 1
+        numFolds = df(1).numFolds;
+        for fold = 1:numFolds
+            
+            % assign variables according to each fold
+            data = df(fold).train_data;
+            trends = df(fold).train_trend; trends = single(trends);
+            nTrends = df(fold).train_ntrends;
+            dcid = df(fold).train_dcid;
+            
         
-        % scans stores the scan number for each time point. we need to keep
-        % track of the scan number to ensure that hRF convolution does operate
-        % across scans
-        scans = rmDecimate(params.analysis.scan_number, doDecimate);
-        params.analysis.scans = round(scans);
-    end
-    
-    
-    %%
-    
-    
-    
-    %-----------------------------------
-    % Go for each voxel
-    %-----------------------------------
-    for n=1:numel(model)
-        % if dc is estimated from the data, remove it from the trends
-        if params.analysis.dc.datadriven
-            t.trends = [];
-            t.dcid   = [];
+            
+            % check to see that all t-series data contain finite numbers
+            tmp      = sum(data(:,wProcess));
+            ok       = ~isnan(tmp);
+            wProcess = wProcess(ok); clear tmp ok;
+            
+            % limit to voxels that will be processed
+            data     = data(:,wProcess);
+            % detrend
+            trendBetas = pinv(single(trends))*data;
+            if params.analysis.doDetrend
+                data       = data - trends*trendBetas;
+            end
+            
+            % decimate? Note that decimated trends are stored in a new variable,
+            data        = rmDecimate(data, doDecimate);
+            sliceTrends = rmDecimate(trends, doDecimate);
+            
+            
+            % put in number of data points. Right now this is the same as
+            % size(data,1)
+            for mm = 1:numel(model)
+                model{mm} = rmSet(model{mm},'npoints',size(data,1));
+            end
+            
+            % store rawrss: this may be different from the one already there because
+            % of the coarse-to-fine approach (i.e. smoothing). Please note that this
+            % rawrss is the rss of the raw timeseries with the trends removed (i.e.
+            % high-pass filtered.
+            for n=1:numel(s)
+                s{n}.rawrss(wProcess) = sum(double(data).^2);
+            end
+            
+            % decimate predictions?
+            %   If we have a nonlinear model, then we cannot pre-convolve the
+            %   stimulus with the hRF. Instead we make predictions with the
+            %   unconvolved images and then convolve with the hRF afterwards
+            if ~checkfields(params, 'analysis', 'nonlinear') || ~params.analysis.nonlinear
+                %�for a lineaer model, use the pre-convolved stimulus images
+                original_allstimimages = params.analysis.allstimimages;
+                params.analysis.allstimimages = rmDecimate(params.analysis.allstimimages,...
+                    doDecimate);
+            else
+                try
+                    % for a nonlinear model, use the unconvolved images
+                    params.analysis.allstimimages_unconvolved = rmDecimate(...
+                        params.analysis.allstimimages_unconvolved, doDecimate);
+                    
+                    % scans stores the scan number for each time point. we need to keep
+                    % track of the scan number to ensure that hRF convolution does operate
+                    % across scans
+                    scans = rmDecimate(params.analysis.scan_number, doDecimate);
+                    params.analysis.scans = round(scans);
+                end
+            end
+            
+            
+            %-----------------------------------
+            % Go for each voxel
+            %-----------------------------------
+            for n=1:numel(model)
+                % if dc is estimated from the data, remove it from the trends
+                if params.analysis.dc.datadriven
+                    t.trends = [];
+                    t.dcid   = [];
+                else
+                    t.trends = sliceTrends(:,dcid);
+                    t.dcid   = dcid;
+                end
+                if isempty(desc)
+                    desc = lower(rmGet(model{n},'desc'));
+                end
+                switch desc,
+                    case {'2d prf fit (x,y,sigma, positive only)','2'}
+                        % different submodel options
+                        if isfield(params.analysis,'xlim') && params.analysis.xlim~=0
+                            s{n}=rmSearchFit_oneGaussianXlim(s{n},data,params,wProcess,t);
+                        else
+                            if isfield(params.analysis.fmins,'refine') && strcmpi(params.analysis.fmins.refine,'sigma');
+                                s{n}=rmSearchFit_oneGaussianSigmaOnly(s{n},data,params,wProcess,t);
+                            else
+                                % default
+                                s{n}=rmSearchFit_oneGaussian(s{n},data,params,wProcess,t);
+                            end
+                        end
+                        
+                    case {'1d prf fit (x,sigma, positive only)'}
+                        % different submodel options
+                        s{n}=rmSearchFit_1DGaussian(s{n},data,params,wProcess,t);
+                        
+                    case {'oval 2d prf fit (x,y,sigma_major,sigma_minor,theta)', 'o'}
+                        s{n}=rmSearchFit_oneOvalGaussian(s{n},data,params,wProcess,t);
+                        
+                    case {'radial oval 2D pRF fit (x,y,sigma_major,sigma_minor)', 'r'}
+                        s{n}=rmSearchFit_oneOvalGaussianNoTheta(s{n},data,params,wProcess,t);
+                        
+                    case {'unsigned 2d prf fit (x,y,sigma)','u'}
+                        s{n}=rmSearchFit_oneGaussianUnsigned(s{n},data,params,wProcess,t);
+                        
+                    case {'sequential 2d prf fit (2*(x,y,sigma, positive only))','s'}
+                        % compute residuals
+                        params.analysis.allstimimages = original_allstimimages;
+                        [residuals s{n}] = rmComputeResiduals(view,params,s{n},slice,[false doDecimate>1]);
+                        params.analysis.allstimimages = ...
+                            rmDecimate(params.analysis.allstimimages,doDecimate);
+                        % fit residuals
+                        t.dcid = t.dcid + 1;
+                        s{n}=rmSearchFit_oneGaussian(s{n},residuals,params,wProcess,t);
+                        trendBetas = zeros(size(trendBetas));
+                        
+                    case {'double 2d prf fit (x,y,sigma,sigma2, center=positive)'}
+                        s{n}=rmSearchFit_twoGaussiansToG(s{n},data,params,wProcess,t);
+                        
+                    case {'difference 2d prf fit (x,y,sigma,sigma2, center=positive)'}
+                        if isfield(params.analysis.fmins,'refine') && strcmpi(params.analysis.fmins.refine,'sigma');
+                            s{n}=rmSearchFit_twoGaussiansDoGSigmasOnly(s{n},data,params,wProcess,t);
+                        else
+                            s{n}=rmSearchFit_twoGaussiansDoG(s{n},data,params,wProcess,t);
+                        end
+                        
+                    case {'difference 2d prf fit fixed (x,y,sigma,sigma2, center=positive)'}
+                        s{n}=rmSearchFit_twoGaussianDoGfixed(s{n},data,params,wProcess,t);
+                        
+                    case {'difference 2d prf fit beta fixed (x,y,sigma,sigma2, center=positive)'}
+                        s{n}=rmSearchFit_twoGaussianDoGBetaFixed(s{n},data,params,wProcess,t);
+                        
+                    case {'two independent 2d prf fit (2*(x,y,sigma, positive only))','t'}
+                        s{n}=rmSearchFit_twoGaussiansPosOnly(s{n},data,params,wProcess,t);
+                        
+                    case {'mirrored 2d prf fit (2*(x,y,sigma, positive only))','m'}
+                        s{n}=rmSearchFit_twoGaussiansMirror(s{n},data,params,wProcess,t,params.analysis.mirror);
+                        
+                    case {'shifted 2d prf fit (2*(x,y,sigma, positive only))','m'}
+                        s{n}=rmSearchFit_shiftedGaussians(s{n},data,params,wProcess,t,params.analysis.pRFshift);
+                        
+                    case {'release two prf ties'}
+                        s{n}=rmSearchFit_twoGaussiansPosOnly(s{n},data,params,wProcess,t);
+                        
+                    case {'addgaussian','add one gaussian'}
+                        [residuals, s{n}] = rmComputeResiduals(view,params,s{n},slice,[false params.analysis.coarseDecimate>1]);
+                        t.dcid = t.dcid + 1;
+                        s{n}=rmSearchFit_oneGaussian(s{n},residuals,params,wProcess,t);
+                        trendBetas = zeros(size(trendBetas));
+                        
+                    case {'css' 'onegaussiannonlinear', 'onegaussianexponent', ...
+                            '2d nonlinear prf fit (x,y,sigma,exponent, positive only)'}
+                        s{n}=rmSearchFit_oneGaussianNonlinear(s{n},data,params,wProcess,t);
+                        
+                    case {'st',  '1ch spatiotemporal prf fit', '2ch spatiotemporal prf fit'...
+                            '2d css nonlinear spatiotemporal prf fit'}
+                        
+                        s{n}=rmSearchFit_temporal(s{n},data,params,wProcess,t,trainSet);
+                        
+                    otherwise
+                        fprintf('[%s]:Unknown pRF model: %s: IGNORED!\n',mfilename,desc);
+                end
+            end
+            
+            
+            %-----------------------------------
+            % now put back the trends to the fits
+            %-----------------------------------
+            for mm=1:numel(s),
+                nB = size(s{mm}.b,1)-nTrends+1;
+                s{mm}.b(nB:end,wProcess) = s{mm}.b(nB:end,wProcess)+trendBetas;
+            end
+            
+            %-----------------------------------
+            % now we put back the temporary data from that slice
+            %-----------------------------------
+            model = rmSliceSet(model,s,slice);
+            
+            % save and clean df output
+            df(fold).x0            = model{1}.x0;
+            df(fold).y0            = model{1}.y0;
+            df(fold).sigma         = model{1}.sigma;
+            df(fold).exponent      = model{1}.exponent;
+            df(fold).beta          = model{1}.beta;
+            df(fold).train_pred    = model{1}.pred_X;
+            
+            switch lower(params.wData)
+                case {'roi'}
+                    df(fold).roi_name      = params.roi.name;
+                    df(fold).coords        = params.roi.coords;
+                    df(fold).coordsIndex   = params.roi.coordsIndex;
+                otherwise
+                    df(fold).roi_name      = 'all';
+                    df(fold).coords        = [];
+                    df(fold).coordsIndex   = [];
+            end
+            
+
+        end
+        
+    elseif  params.analysis.cv ~= 1
+        %-----------------------------------
+        %--- make trends to fit with the model (discrete cosine set)
+        %-----------------------------------
+        [trends, ntrends, dcid] = rmMakeTrends(params);
+        trends = single(trends);
+        
+        % check to see that all t-series data contain finite numbers
+        tmp      = sum(data(:,wProcess));
+        ok       = ~isnan(tmp);
+        wProcess = wProcess(ok); clear tmp ok;
+        
+        % limit to voxels that will be processed
+        data     = data(:,wProcess);
+        
+        % don't forget to detrend
+        trendBetas = pinv(trends)*data;
+        if params.analysis.doDetrend
+            data = data - trends*trendBetas;
+        end
+        
+        % decimate? Note that decimated trends are stored in a new variable,
+        data        = rmDecimate(data, doDecimate);
+        sliceTrends = rmDecimate(trends, doDecimate);
+         
+        % put in number of data points. Right now this is the same as
+        % size(data,1)
+        for mm = 1:numel(model)
+            model{mm} = rmSet(model{mm},'npoints',size(data,1));
+        end
+        
+        for n=1:numel(s)
+            s{n}.rawrss(wProcess) = sum(double(data).^2);
+        end
+        
+        if ~checkfields(params, 'analysis', 'nonlinear') || ~params.analysis.nonlinear
+            %�for a lineaer model, use the pre-convolved stimulus images
+            original_allstimimages = params.analysis.allstimimages;
+            params.analysis.allstimimages = rmDecimate(params.analysis.allstimimages,...
+                doDecimate);
         else
-            t.trends = sliceTrends(:,dcid);
-            t.dcid   = dcid;
+            % for a nonlinear model, use the unconvolved images
+            params.analysis.allstimimages_unconvolved = rmDecimate(...
+                params.analysis.allstimimages_unconvolved, doDecimate);
+            
+            % scans stores the scan number for each time point. we need to keep
+            % track of the scan number to ensure that hRF convolution does operate
+            % across scans
+            scans = rmDecimate(params.analysis.scan_number, doDecimate);
+            params.analysis.scans = round(scans);
         end
-        if isempty(desc)
-            desc = lower(rmGet(model{n},'desc'));
-        end
-        switch desc,
-            case {'2d prf fit (x,y,sigma, positive only)','2'}
-                % different submodel options
-                if isfield(params.analysis,'xlim') && params.analysis.xlim~=0
-                    s{n}=rmSearchFit_oneGaussianXlim(s{n},data,params,wProcess,t);
-                else
-                    if isfield(params.analysis.fmins,'refine') && strcmpi(params.analysis.fmins.refine,'sigma');
-                        s{n}=rmSearchFit_oneGaussianSigmaOnly(s{n},data,params,wProcess,t);
+        
+        %-----------------------------------
+        % Go for each voxel
+        %-----------------------------------
+        for n=1:numel(model)
+            % if dc is estimated from the data, remove it from the trends
+            if params.analysis.dc.datadriven
+                t.trends = [];
+                t.dcid   = [];
+            else
+                t.trends = sliceTrends(:,dcid);
+                t.dcid   = dcid;
+            end
+            if isempty(desc)
+                desc = lower(rmGet(model{n},'desc'));
+            end
+            switch desc,
+                case {'2d prf fit (x,y,sigma, positive only)','2'}
+                    % different submodel options
+                    if isfield(params.analysis,'xlim') && params.analysis.xlim~=0
+                        s{n}=rmSearchFit_oneGaussianXlim(s{n},data,params,wProcess,t);
                     else
-                        % default
-                        s{n}=rmSearchFit_oneGaussian(s{n},data,params,wProcess,t);
+                        if isfield(params.analysis.fmins,'refine') && strcmpi(params.analysis.fmins.refine,'sigma');
+                            s{n}=rmSearchFit_oneGaussianSigmaOnly(s{n},data,params,wProcess,t);
+                        else
+                            % default
+                            s{n}=rmSearchFit_oneGaussian(s{n},data,params,wProcess,t);
+                        end
                     end
-                end
-                
-            case {'1d prf fit (x,sigma, positive only)'}
-                % different submodel options
-                s{n}=rmSearchFit_1DGaussian(s{n},data,params,wProcess,t);
-                
-            case {'oval 2d prf fit (x,y,sigma_major,sigma_minor,theta)', 'o'}
-                s{n}=rmSearchFit_oneOvalGaussian(s{n},data,params,wProcess,t);
-                
-            case {'radial oval 2D pRF fit (x,y,sigma_major,sigma_minor)', 'r'}
-                s{n}=rmSearchFit_oneOvalGaussianNoTheta(s{n},data,params,wProcess,t);
-                
-            case {'unsigned 2d prf fit (x,y,sigma)','u'}
-                s{n}=rmSearchFit_oneGaussianUnsigned(s{n},data,params,wProcess,t);
-                
-            case {'sequential 2d prf fit (2*(x,y,sigma, positive only))','s'}
-                % compute residuals
-                params.analysis.allstimimages = original_allstimimages;
-                [residuals s{n}] = rmComputeResiduals(view,params,s{n},slice,[false doDecimate>1]);
-                params.analysis.allstimimages = ...
-                    rmDecimate(params.analysis.allstimimages,doDecimate);
-                % fit residuals
-                t.dcid = t.dcid + 1;
-                s{n}=rmSearchFit_oneGaussian(s{n},residuals,params,wProcess,t);
-                trendBetas = zeros(size(trendBetas));
-
-            case {'double 2d prf fit (x,y,sigma,sigma2, center=positive)'}
-                s{n}=rmSearchFit_twoGaussiansToG(s{n},data,params,wProcess,t);
-
-            case {'difference 2d prf fit (x,y,sigma,sigma2, center=positive)'}
-                if isfield(params.analysis.fmins,'refine') && strcmpi(params.analysis.fmins.refine,'sigma');
-                    s{n}=rmSearchFit_twoGaussiansDoGSigmasOnly(s{n},data,params,wProcess,t);
-                else
-                    s{n}=rmSearchFit_twoGaussiansDoG(s{n},data,params,wProcess,t);
-                end
-
-            case {'difference 2d prf fit fixed (x,y,sigma,sigma2, center=positive)'}
-                s{n}=rmSearchFit_twoGaussianDoGfixed(s{n},data,params,wProcess,t);
-                
-            case {'difference 2d prf fit beta fixed (x,y,sigma,sigma2, center=positive)'}
-                s{n}=rmSearchFit_twoGaussianDoGBetaFixed(s{n},data,params,wProcess,t);
-
-            case {'two independent 2d prf fit (2*(x,y,sigma, positive only))','t'}
-                s{n}=rmSearchFit_twoGaussiansPosOnly(s{n},data,params,wProcess,t);
-                
-            case {'mirrored 2d prf fit (2*(x,y,sigma, positive only))','m'}
-                s{n}=rmSearchFit_twoGaussiansMirror(s{n},data,params,wProcess,t,params.analysis.mirror);
-																	   
-			case {'shifted 2d prf fit (2*(x,y,sigma, positive only))','m'}
-				s{n}=rmSearchFit_shiftedGaussians(s{n},data,params,wProcess,t,params.analysis.pRFshift);
-																	   
-            case {'release two prf ties'}
-                s{n}=rmSearchFit_twoGaussiansPosOnly(s{n},data,params,wProcess,t);
-                
-            case {'addgaussian','add one gaussian'}
-                [residuals, s{n}] = rmComputeResiduals(view,params,s{n},slice,[false params.analysis.coarseDecimate>1]);
-                t.dcid = t.dcid + 1;
-                s{n}=rmSearchFit_oneGaussian(s{n},residuals,params,wProcess,t);
-                trendBetas = zeros(size(trendBetas));
-
-            case {'css' 'onegaussiannonlinear', 'onegaussianexponent', ...
-                    '2d nonlinear prf fit (x,y,sigma,exponent, positive only)'}
-                s{n}=rmSearchFit_oneGaussianNonlinear(s{n},data,params,wProcess,t);
-          
-            case {'st',  '1ch spatiotemporal prf fit', '2ch spatiotemporal prf fit'...
-                    '2d css nonlinear spatiotemporal prf fit'}
-
-                s{n}=rmSearchFit_temporal(s{n},data,params,wProcess,t);
-
-            otherwise
-                fprintf('[%s]:Unknown pRF model: %s: IGNORED!\n',mfilename,desc);
+                    
+                case {'1d prf fit (x,sigma, positive only)'}
+                    % different submodel options
+                    s{n}=rmSearchFit_1DGaussian(s{n},data,params,wProcess,t);
+                    
+                case {'oval 2d prf fit (x,y,sigma_major,sigma_minor,theta)', 'o'}
+                    s{n}=rmSearchFit_oneOvalGaussian(s{n},data,params,wProcess,t);
+                    
+                case {'radial oval 2D pRF fit (x,y,sigma_major,sigma_minor)', 'r'}
+                    s{n}=rmSearchFit_oneOvalGaussianNoTheta(s{n},data,params,wProcess,t);
+                    
+                case {'unsigned 2d prf fit (x,y,sigma)','u'}
+                    s{n}=rmSearchFit_oneGaussianUnsigned(s{n},data,params,wProcess,t);
+                    
+                case {'sequential 2d prf fit (2*(x,y,sigma, positive only))','s'}
+                    % compute residuals
+                    params.analysis.allstimimages = original_allstimimages;
+                    [residuals s{n}] = rmComputeResiduals(view,params,s{n},slice,[false doDecimate>1]);
+                    params.analysis.allstimimages = ...
+                        rmDecimate(params.analysis.allstimimages,doDecimate);
+                    % fit residuals
+                    t.dcid = t.dcid + 1;
+                    s{n}=rmSearchFit_oneGaussian(s{n},residuals,params,wProcess,t);
+                    trendBetas = zeros(size(trendBetas));
+                    
+                case {'double 2d prf fit (x,y,sigma,sigma2, center=positive)'}
+                    s{n}=rmSearchFit_twoGaussiansToG(s{n},data,params,wProcess,t);
+                    
+                case {'difference 2d prf fit (x,y,sigma,sigma2, center=positive)'}
+                    if isfield(params.analysis.fmins,'refine') && strcmpi(params.analysis.fmins.refine,'sigma');
+                        s{n}=rmSearchFit_twoGaussiansDoGSigmasOnly(s{n},data,params,wProcess,t);
+                    else
+                        s{n}=rmSearchFit_twoGaussiansDoG(s{n},data,params,wProcess,t);
+                    end
+                    
+                case {'difference 2d prf fit fixed (x,y,sigma,sigma2, center=positive)'}
+                    s{n}=rmSearchFit_twoGaussianDoGfixed(s{n},data,params,wProcess,t);
+                    
+                case {'difference 2d prf fit beta fixed (x,y,sigma,sigma2, center=positive)'}
+                    s{n}=rmSearchFit_twoGaussianDoGBetaFixed(s{n},data,params,wProcess,t);
+                    
+                case {'two independent 2d prf fit (2*(x,y,sigma, positive only))','t'}
+                    s{n}=rmSearchFit_twoGaussiansPosOnly(s{n},data,params,wProcess,t);
+                    
+                case {'mirrored 2d prf fit (2*(x,y,sigma, positive only))','m'}
+                    s{n}=rmSearchFit_twoGaussiansMirror(s{n},data,params,wProcess,t,params.analysis.mirror);
+                    
+                case {'shifted 2d prf fit (2*(x,y,sigma, positive only))','m'}
+                    s{n}=rmSearchFit_shiftedGaussians(s{n},data,params,wProcess,t,params.analysis.pRFshift);
+                    
+                case {'release two prf ties'}
+                    s{n}=rmSearchFit_twoGaussiansPosOnly(s{n},data,params,wProcess,t);
+                    
+                case {'addgaussian','add one gaussian'}
+                    [residuals, s{n}] = rmComputeResiduals(view,params,s{n},slice,[false params.analysis.coarseDecimate>1]);
+                    t.dcid = t.dcid + 1;
+                    s{n}=rmSearchFit_oneGaussian(s{n},residuals,params,wProcess,t);
+                    trendBetas = zeros(size(trendBetas));
+                    
+                case {'css' 'onegaussiannonlinear', 'onegaussianexponent', ...
+                        '2d nonlinear prf fit (x,y,sigma,exponent, positive only)'}
+                    s{n}=rmSearchFit_oneGaussianNonlinear(s{n},data,params,wProcess,t);
+                    
+                case {'st',  '1ch spatiotemporal prf fit', '2ch spatiotemporal prf fit'...
+                        '2d css nonlinear spatiotemporal prf fit'}
+                    
+                    s{n}=rmSearchFit_temporal(s{n},data,params,wProcess,t);
+                    
+                otherwise
+                    fprintf('[%s]:Unknown pRF model: %s: IGNORED!\n',mfilename,desc);
+            end
         end
+        
+        
+        %-----------------------------------
+        % now put back the trends to the fits
+        %-----------------------------------
+        for mm=1:numel(s),
+            nB = size(s{mm}.b,1)-nTrends+1;
+            s{mm}.b(nB:end,wProcess) = s{mm}.b(nB:end,wProcess)+trendBetas;
+        end
+        
+        %-----------------------------------
+        % now we put back the temporary data from that slice
+        %-----------------------------------
+        model = rmSliceSet(model,s,slice);
+        
     end
 
+    
+end
 
-    %-----------------------------------
-    % now put back the trends to the fits
-    %-----------------------------------
-    for mm=1:numel(s),
-        nB = size(s{mm}.b,1)-nTrends+1;
-        s{mm}.b(nB:end,wProcess) = s{mm}.b(nB:end,wProcess)+trendBetas;
-    end
 
-    %-----------------------------------
-    % now we put back the temporary data from that slice
-    %-----------------------------------
-    model = rmSliceSet(model,s,slice);
+
+
+%-----------------------------------
+% save
+%-----------------------------------
+for n=1:numel(model),
+    model{n} = rmSet(model{n},'coords',[]);
 end;
+output = rmSave(view,model,params,1,stage);
+
+view   = viewSet(view,'rmFile',output);
+
+% that's it
+return;
+%-----------------------------------
+
+
+
 
 % %-----------------------------------
 % % get Timecouse results
@@ -553,20 +826,3 @@ end;
 % 
 % end
 
-
-
-
-
-%-----------------------------------
-% save
-%-----------------------------------
-for n=1:numel(model),
-    model{n} = rmSet(model{n},'coords',[]);
-end;
-output = rmSave(view,model,params,1,stage);
-
-view   = viewSet(view,'rmFile',output);
-
-% that's it
-return;
-%-----------------------------------
