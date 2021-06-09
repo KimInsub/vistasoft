@@ -143,7 +143,7 @@ for n=1:length(params.stim)
     % jitter images to account for eye movement if offset data exists
     params.stim(n) = rmJitterImages(params.stim(n), params);
     
-    if  strcmp(params.analysis.pRFmodel{1},'st')
+    if  strcmp(params.stim(1).stimType,'StiminMS')
         params.stim(n).images =[];
     else
         % now convolve with HRF
@@ -183,16 +183,15 @@ end
 
 % matrix with all the different stimulus images.
 % [IK] deal with limited RAM size
-try
-    params.analysis.allstimimages = [params.stim(:).images]';
-    params.analysis.allstimimages_unconvolved = [params.stim(:).images_unconvolved]';  % time x pixels
-    params.analysis.scan_number    = [params.stim(:).scan_number]';
-catch 
-    warning('[%s]: Potential outof memory issue.',...
-        mfilename);
+if  strcmp(params.stim(1).stimType,'StiminMS') 
     params.analysis.allstimimages = [];
     params.analysis.allstimimages_unconvolved = [];
     params.analysis.scan_number = [];
+else 
+    params.analysis.allstimimages = [params.stim(:).images]';
+    params.analysis.allstimimages_unconvolved = [params.stim(:).images_unconvolved]';  % time x pixels
+    params.analysis.scan_number    = [params.stim(:).scan_number]';
+
 end
 
 % the stimulus generation file can specify nuisance factors (e.g. large
