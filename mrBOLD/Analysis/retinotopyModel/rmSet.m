@@ -167,7 +167,12 @@ switch lower(param),
         model.Kn = val;
     case {'weight'}
         model.weight = val;
-      
+    case {'varexpfitprf'}
+        model.varexpfitprf = val;
+    case {'cv_varexpfitprf'}
+        model.cv_varexpfitprf = val;
+        
+
 	otherwise,
 		error('Unknown parameter: %s',param);
 

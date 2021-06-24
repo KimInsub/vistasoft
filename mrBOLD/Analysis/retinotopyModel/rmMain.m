@@ -165,7 +165,8 @@ switch lower(wSearch)
         fprintf(1,'[%s]: *****************************************\n',mfilename);
         fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
         fprintf(1,'[%s]: *****************************************\n',mfilename);
-
+        
+        view = rmGridFit(view,params);
         view = rm_st_SearchFit(view,params);
 
         
@@ -176,7 +177,8 @@ end
 %-----------------------------------
 % Final fit (only for certain models)
 %-----------------------------------
-view = rmFinalFit(view,params);
-
+if wSearch ~= 8
+    view = rmFinalFit(view,params);
+end
 % done
 return;

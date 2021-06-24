@@ -30,7 +30,6 @@ tic; progress = 0;
 
 %%
 % % % normalize channels
-% size(tmodel.run_preds,2)
 if strcmp(params.analysis.pRFmodel{1}, 'st')
 if size(prediction,3) == 2
     for ii = 1:size(prediction,2) % 720       82608           2
@@ -48,27 +47,27 @@ end
 %%
 
 warning('off', 'MATLAB:lscov:RankDefDesignMat')
-for n=1:numel(params.analysis.x0),
+for n=1:numel(params.analysis.x0)
     %-----------------------------------
     % progress monitor (10 dots) and time indicator
     %-----------------------------------
-    if floor(n./numel(params.analysis.x0).*10)>progress,
+    if floor(n./numel(params.analysis.x0).*10)>progress
         if progress==0,
             % print out estimated time left
             esttime = toc.*10;
-            if floor(esttime./3600)>0,
+            if floor(esttime./3600)>0
                 fprintf(1,'[%s]:Estimated processing time: %d hours.\t(%s)\n',...
                     mfilename, ceil(esttime./3600), datestr(now));
             else
                 fprintf(1, '[%s]:Estimated processing time: %d minutes.\t(%s)\n',...
                     mfilename, ceil(esttime./60), datestr(now));
-            end;
+            end
             fprintf(1,'[%s]:Grid (x,y,sigma) fit:',mfilename);drawnow;
-        end;
+        end
         % progress monitor
         fprintf(1,'.');drawnow;
         progress = progress + 1;
-    end;
+    end
 
     %-----------------------------------
     %--- now apply glm to fit RF
@@ -77,7 +76,7 @@ for n=1:numel(params.analysis.x0),
 %     X    = [prediction(:,n,1) prediction(:,n,2) trends];
     X    = [squeeze(prediction(:,n,:)) trends];
     
-    Maxnorm = max(squeeze(prediction(:,n,:)));
+%     Maxnorm = max(squeeze(prediction(:,n,:)));
 
     % This line takes up 30% of the time
     % lscov takes as long as the pinv method but provides the rss as well...

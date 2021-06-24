@@ -128,7 +128,8 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
         disp(params.analysis.predFile)
         load(params.analysis.predFile);
     elseif ~isfile(params.analysis.predFile)
-        stimGrid = rmGridstPred(params);
+%         stimGrid = rmGridstPred(params);
+          stimGrid = rmGridstPred2(params);
     end
     % assign each grid to params
     for es = 1:length(params.stim)
@@ -224,20 +225,22 @@ for slice=loopSlices
         % data => Time X Voxel
         % prediction and data should match in their time domain
         for fold = 1:numFolds
-            trainSet = find(cv_split.training(fold));
+            trainSet =  find(cv_split.training(fold));
             testSet  =  find(cv_split.test(fold));
+            
+            
+            % edited to account for cross validation
+            [train_trend, train_ntrends, train_dcid] = rmMakeTrends(params,trainSet);
+            [test_trend, test_ntrend, test_dcid] = rmMakeTrends(params,testSet);
+
             
             % concat and load  traning     data---
             [traindata{fold},params] = rmLoadData(view, params, slice, ...
                 params.analysis.coarseToFine, [], trainSet);
-           % [data, params] = rmLoadData(view, params, slice,...
+            % [data, params] = rmLoadData(view, params, slice,...
             % concat and load  testing     data---
             [testdata{fold},params] = rmLoadData(view, params, slice, ...
                 params.analysis.coarseToFine, [], testSet);
-                  
-         
-            
-            
             
             % gather the prediction  data---
             train_grid = cell(length(trainSet),1);
@@ -248,11 +251,6 @@ for slice=loopSlices
             [test_grid{:}] = params.stim(testSet).prediction;
             test_grid = cell2mat(test_grid);
 
-            % edited to account for cross validation
-            [train_trend, train_ntrends, train_dcid] = rmMakeTrends(params,trainSet);
-            [test_trend, test_ntrend, test_dcid] = rmMakeTrends(params,testSet);
-
-            
             % save some raw unsmoothed values for future usage 
             [traindata_raw{fold},params] = rmLoadData(view, params, slice, ...
                 [], [], trainSet);
@@ -260,14 +258,43 @@ for slice=loopSlices
                 [], [], testSet);
             
             if params.analysis.doDetrend
+                trendBetas1 = pinv(train_trend)*traindata{fold};
+                trendBetas2 = pinv(test_trend)*testdata{fold};
                 
+                traindata{fold}     = traindata{fold} - train_trend*trendBetas1;
+                testdata{fold}      = testdata{fold}  - test_trend*trendBetas2;
+
                 trendBetas1 = pinv(train_trend)*traindata_raw{fold};
                 trendBetas2 = pinv(test_trend)*testdata_raw{fold};
 
                 traindata_raw{fold} = traindata_raw{fold} - train_trend*trendBetas1;
-                testdata_raw{fold} = testdata_raw{fold} - test_trend*trendBetas2;
+                testdata_raw{fold}  = testdata_raw{fold}  - test_trend*trendBetas2;
             end
             
+            
+            
+            if params.analysis.doBlankBaseline
+                
+                tmp = cell(1,length(trainSet)); 
+                [tmp{:}] = params.stim(trainSet).baseline;
+                train_baselineIDX = cell2mat(tmp);
+                
+                tmp = cell(1,length(testSet));
+                [tmp{:}] = params.stim(testSet).baseline;
+                test_baselineIDX = cell2mat(tmp);
+                clear tmp
+                
+                traindata{fold}  = st_baselineCorrect(traindata{fold},train_baselineIDX);
+                testdata{fold}  = st_baselineCorrect(testdata{fold},test_baselineIDX);
+                
+                traindata_raw{fold}  = st_baselineCorrect(traindata_raw{fold},train_baselineIDX);
+                testdata_raw{fold}  = st_baselineCorrect(testdata_raw{fold},test_baselineIDX);
+
+            end
+
+            
+            
+            %%
             
             % save cv information to a strcuct
             df(fold).info = cv_split;
@@ -278,12 +305,11 @@ for slice=loopSlices
             df(fold).train_data = traindata{fold};
             df(fold).test_data = testdata{fold};
             
+            df(fold).train_grid = train_grid;
+            df(fold).test_grid = test_grid;
+
             df(fold).train_data_raw = traindata_raw{fold};
             df(fold).test_data_raw = testdata_raw{fold};
-
-            
-%             df(fold).train_grid = train_grid;
-%             df(fold).test_grid = test_grid;
 
             df(fold).train_trend = train_trend;
             df(fold).test_trend = test_trend;
@@ -321,21 +347,13 @@ for slice=loopSlices
         for fold = 1:numFolds
             
             % assign variables according to each fold
+            
             data = df(fold).train_data;
             prediction = df(fold).train_grid;
             trends = df(fold).train_trend; trends = single(trends);
             ntrends = df(fold).train_ntrends;
             dcid = df(fold).train_dcid;
-            
-            % don't forget to detrend (this is done within gridsolve)
-%             trendBetas = pinv(trends)*data;
-%             if params.analysis.doDetrend
-%                 data = data - trends*trendBetas;
-%             end
-            
-%             smalldata = data(:,tcoord:tcoord+10);
-%             model = rmGridSolve(params,smalldata,prediction,trends,ntrends,dcid,slice,nSlices);
-            
+                        
             % solve GRID! - for train_data set
             model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nSlices);
 
@@ -344,14 +362,17 @@ for slice=loopSlices
                 model = rmInterpolate(view, model, params);
             end
             
-            % save and clean df output
-            df(fold).x0            = model{1}.x0;
-            df(fold).y0            = model{1}.y0;
-            df(fold).sigma         = model{1}.sigma;
-            df(fold).exponent      = model{1}.exponent;
-            df(fold).beta          = model{1}.beta;
-            df(fold).train_pred    = model{1}.pred_X;
+            % setback to graymodel if it is an ROI based computation
+            Graymodel = rmGrayModel(view,model);
             
+            % save and clean df output
+            df(fold).x0            = Graymodel{1}.x0;
+            df(fold).y0            = Graymodel{1}.y0;
+            df(fold).sigma         = Graymodel{1}.sigma;
+            df(fold).exponent      = Graymodel{1}.exponent;
+            df(fold).beta          = Graymodel{1}.beta;
+            df(fold).train_pred    = Graymodel{1}.pred_X;
+
             switch lower(params.wData)
                 case {'roi'}
                     df(fold).roi_name      = params.roi.name;
@@ -363,8 +384,42 @@ for slice=loopSlices
                     df(fold).coordsIndex   = [];
             end
             
+        end
+        
+        
+       
+        % apply beta and re-calculate betas
+        if ~isfield(df,'test_pred')
+            df    = st_compute_test(df,params);
+        end
+        
+        % apply beta and calculate varexp
+        for fold = 1:numFolds
+            df(fold).varexp =[];
+            df    = st_applyBeta(df,fold);
+            
+%             df(fold).roiVarExp = df(fold).varexp;
+%             df(fold).roiVarExp = df(fold).cv_varexp;
+
+            model{1}.cv_varexpfitprf = df(fold).cv_varexp;
+            model{1}.varexpfitprf = df(fold).varexp;
+            Graymodel = rmGrayModel(view,model);
+            df(fold).varexp = Graymodel{1}.varexpfitprf;
+            df(fold).cv_varexp = Graymodel{1}.cv_varexpfitprf;
 
         end
+        
+        % cleanup before saving
+        if isfield(df,'train_grid')
+            df = rmfield( df , 'train_grid' );
+        end
+        if isfield(df,'test_grid')
+            df = rmfield( df , 'test_grid' );
+        end
+        
+        
+
+        
     else
         %-----------------------------------
         %--- make trends to fit with the model (discrete cosine set)

@@ -654,11 +654,14 @@ params.analysis.fmins.refine = 'all';
 % params.analysis.coarseDecimate = 0; 
 % params.analysis.coarseToFine = false; %smoothing
 
-if contains(params.analysis.session,'no')
-    params.analysis.doDetrend = 0;
-else
-    params.analysis.doDetrend = 1;
-end
+% if contains(params.analysis.session,'no')
+%     params.analysis.doDetrend = 0;
+% else
+%     params.analysis.doDetrend = 1;
+% end
+
+params.analysis.doDetrend = 1;
+params.analysis.doBlankBaseline = 1;
 
 params.analysis.predDir = Constants.getDir.grid_dir;
 mkdir(params.analysis.predDir)

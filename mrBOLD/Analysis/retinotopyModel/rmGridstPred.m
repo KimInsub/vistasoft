@@ -53,7 +53,7 @@ for es = 1:length(params.stim)
         t = 0.001 : 0.001 : size(allstimimages,2)/fs;
         
         
-        rsp =st_tModel(temp_type,temporal_param, allstimimages, t); % rsp = time (ms) x space
+        rsp =st_tModel(temp_type,temporal_param, full(allstimimages), t); % rsp = time (ms) x space
         
         
         fprintf(1,'[%s]:Making %d model samples:',mfilename,n);

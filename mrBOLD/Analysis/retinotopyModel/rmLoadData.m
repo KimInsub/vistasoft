@@ -127,6 +127,15 @@ data = ((data./dc) - 1) .*100;
 return;
 %---------------------------------
 
+% %---------------------------------
+% function data=calcBaseline(data,baselineIDX)
+% 
+% baseline = mean(mean(data(baselineIDX,:)));
+% data = data - baseline;
+% 
+% return;
+% %---------------------------------
+
 
 %---------------------------------
 function [tSeries, coords, params, grayConMat] = rmLoadDataROI(vw, params, ds, scannum, coarse, grayConMat, preserveCoords)
@@ -171,7 +180,9 @@ if coarse,
 
 	% ras 01/09: only convert to percent change if the flag is set
 	if params.analysis.calcPC, tSeries  = raw2pc(tSeries);	end
-
+%     if params.analysis.doBlankBaseline 
+%         tSeries = calcBaseline(tSeries,params.stim(scannum).baseline);
+%     end
 	coords = roiIndex(coarseIndex);
 
 else % old approach
@@ -190,7 +201,9 @@ else % old approach
 
 	% ras 01/09: only convert to percent change if the flag is set
 	if params.analysis.calcPC, tSeries  = raw2pc(tSeries);  end
-
+%     if params.analysis.doBlankBaseline
+%         tSeries = calcBaseline(tSeries,params.stim(scannum).baseline);
+%     end
 	% average repeats
     tSeries  = rmAverageTime(tSeries, params.stim(scannum).nUniqueRep);
 end;
