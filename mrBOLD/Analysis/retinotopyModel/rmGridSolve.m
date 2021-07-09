@@ -4,14 +4,16 @@ function model = rmGridSolve(params,data,prediction,trends,ntrends,dcid,slice,nS
 % explained calculation later.
 data(isnan(data)) = 0;
 data = single(data);
-
-% detrending
+% 
+% % detrending
 trendBetas = pinv(trends)*data;
-%%%%% don't do this for single pulse
-if params.analysis.doDetrend
-    data = data - trends*trendBetas;
-end
-t.trends = trends(:,dcid);
+nChan = params.analysis.nchan;
+
+% %%%%% don't do this for single pulse
+% if params.analysis.doDetrend
+%     data = data - trends*trendBetas;
+% end
+% t.trends = trends(:,dcid);
 
 % reset DC component by specific data-period (if requested)
 if params.analysis.dc.datadriven
@@ -49,7 +51,7 @@ if slice == 1,
     % For all cases, put in number of data points.
     for mm = 1:numel(model),
         model{mm} = rmSet(model{mm},'npoints',size(data,1));
-        model{mm} = rmSet(model{mm},'pred_X', zeros(nSlices,size(data,2),model{mm}.npoints));
+        model{mm} = rmSet(model{mm},'pred_X', zeros(nSlices,size(data,2),model{mm}.npoints,nChan));
     end
 end
 
@@ -175,6 +177,8 @@ for n=1:numel(params.analysis.pRFmodel)
             
         case {'st'}
             s{n}=rmGridFit_spatiotemporal(s{n},prediction,data,params,t);
+            trendBetas = zeros(size(trendBetas));
+
             %
         otherwise
             fprintf('[%s]:Unknown pRF model: %s: IGNORED!',mfilename,params.analysis.pRFmodel{n});

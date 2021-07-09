@@ -136,7 +136,8 @@ switch lower(params.analysis.pRFmodel{1})
         
         %save it as sparse matrix to use memory efficiently
         params.stim(id).images = sparse(msStim);
-        
+%         params.stim(id).images = (msStim);
+
     otherwise
         error("Underdevelopment--- need to update to change ms to s stim")
         
@@ -147,10 +148,10 @@ if params.analysis.doBlankBaseline == 1
     params.stim(id).baseline = I.sec_sequence(params.stim(id).prescanDuration+1:end)==0;
     
     % shift 5 seconds to account for the HRF
-    params.stim(id).baseline = circshift(params.stim(id).baseline,5/params.stim(id).framePeriod);
+    params.stim(id).baseline = circshift(params.stim(id).baseline,6/params.stim(id).framePeriod);
    
     % and remove the initial junks (by product of the cirshift function)
-    params.stim(id).baseline(1:5) = 0;
+    params.stim(id).baseline(1:6) = 0;
 end
 
 % ALSO change prescandur to be in ms

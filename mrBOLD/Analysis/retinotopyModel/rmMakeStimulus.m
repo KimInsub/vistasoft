@@ -143,22 +143,19 @@ for n=1:length(params.stim)
     % jitter images to account for eye movement if offset data exists
     params.stim(n) = rmJitterImages(params.stim(n), params);
     
-    if  strcmp(params.stim(1).stimType,'StiminMS')
-        params.stim(n).images =[];
-    else
-        % now convolve with HRF
+    % now convolve with HRF
+    if  ~strcmp(params.stim(1).stimType,'StiminMS') 
         params.stim(n).images = filter(params.analysis.Hrf{n}, 1, params.stim(n).images'); % images: pixels by time (so images': time x pixels)
-        
-        % limit to actual MR recording.
-        params.stim(n).images = params.stim(n).images(params.stim(n).prescanDuration+1:end,:);
-        
-        % and time averaging
-        params.stim(n).images = rmAverageTime(params.stim(n).images, ...
-            params.stim(n).nUniqueRep);
-        
-        % rotate so we can easily create an average stimulus image matrix
-        params.stim(n).images = params.stim(n).images';
     end
+    % limit to actual MR recording.
+    params.stim(n).images = params.stim(n).images(params.stim(n).prescanDuration+1:end,:);
+        
+    % and time averaging
+    params.stim(n).images = rmAverageTime(params.stim(n).images, ...
+        params.stim(n).nUniqueRep);
+    
+    % rotate so we can easily create an average stimulus image matrix
+    params.stim(n).images = params.stim(n).images';
     %*********************************************************************
     % store a copy of the images that do not get convolved with hRF
     params.stim(n).images_unconvolved = params.stim(n).images_org;
@@ -187,6 +184,7 @@ if  strcmp(params.stim(1).stimType,'StiminMS')
     params.analysis.allstimimages = [];
     params.analysis.allstimimages_unconvolved = [];
     params.analysis.scan_number = [];
+    params.stim(n).images = [];
 else 
     params.analysis.allstimimages = [params.stim(:).images]';
     params.analysis.allstimimages_unconvolved = [params.stim(:).images_unconvolved]';  % time x pixels
