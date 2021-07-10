@@ -166,12 +166,20 @@ switch lower(wSearch)
         fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
         fprintf(1,'[%s]: *****************************************\n',mfilename);
         
+        
+        
         pathStr = fileparts(fullfile(dataDir(view),[params.matFileName{end} '*']));
-        pathStr = getAllFiles(pathStr,'*gFit.mat',1);
+        saveTmodelName = strrep(params.analysis.temporalModel,'-','_');
+        pathStr = getAllFiles(pathStr,['*' saveTmodelName '*gFit.mat'],1);
         
         if isempty(pathStr) 
             view = rmGridFit(view,params);
+        else
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+            fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
         end
+        
         view = rm_st_SearchFit(view,params);
 
         

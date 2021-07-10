@@ -78,15 +78,32 @@ for n=1:numel(model),
     
     % distribute beta values
     val = rmGet(model{n},'pred_X');
-    switch length(size(val)) 
-        % switch on the number of dimensions, since inplane data has diff
-        % dimesnsionality than other views
-        case 4 % 4 dimensions means Inplane model:
-            for fn = 1:size(val,2)
-                val(slice,fn,:,:) = double(tmp{n}.pred_X(:,fn,:));
-            end
-        otherwise   
-            error("under development")
+    if nchan == 2 && length(size(val)) == 4
+        for fn = 1:size(val,2)
+            val(slice,fn,:,:) = double(tmp{n}.pred_X(:,fn,:));
+        end
+    end
+    
+    if nchan == 1 && length(size(val)) == 3
+        for fn = 1:size(val,2)
+            val(slice,fn,:) = double(tmp{n}.pred_X(:,fn));
+        end
+    end
+    
+%     sz = size(val); 
+%     val = reshape(tmp{n}.pred_X,sz);
+
+%     
+%     switch length(size(val)) 
+%         case 4 % 4 dimensions means linear Model
+%             for fn = 1:size(val,2)
+%                 val(slice,fn,:,:) = double(tmp{n}.pred_X(:,fn,:));
+%             end
+%         otherwise   
+% %             error("under development")
+%             for fn = 1:size(val,2)
+%                 val(slice,fn,:) = double(tmp{n}.pred_X(fn,:));
+%             end
 %             val = val(:,:,1:size(tmp{n}.pred_X,1));
 %             if nchan == 2
 %                 val = cat(4,val,val);
@@ -99,7 +116,7 @@ for n=1:numel(model),
 %                     val(slice,:,fn) = double(tmp{n}.pred_X(fn,:));
 %                 end
 %             end
-    end
+%     end
     model{n} = rmSet(model{n},'pred_X',val);
     
 
