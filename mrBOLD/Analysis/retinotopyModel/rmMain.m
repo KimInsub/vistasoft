@@ -167,12 +167,13 @@ switch lower(wSearch)
         fprintf(1,'[%s]: *****************************************\n',mfilename);
         
         
-        
-        pathStr = fileparts(fullfile(dataDir(view),[params.matFileName{end} '*']));
-        saveTmodelName = strrep(params.analysis.temporalModel,'-','_');
-        pathStr = getAllFiles(pathStr,['*' saveTmodelName '*gFit.mat'],1);
-        
-        if isempty(pathStr) 
+%         
+%         pathStr = fileparts(fullfile(dataDir(view),[params.matFileName{end} '*']));
+%         saveTmodelName = strrep(params.analysis.temporalModel,'-','_');
+%         pathStr = getAllFiles(pathStr,['*' saveTmodelName '*gFit.mat'],1);
+         pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
+
+        if ~isfile(pathStr) 
             view = rmGridFit(view,params);
         else
             fprintf(1,'[%s]: *****************************************\n',mfilename);
