@@ -166,7 +166,12 @@ switch lower(wSearch)
         fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
         fprintf(1,'[%s]: *****************************************\n',mfilename);
         
-        view = rmGridFit(view,params);
+        pathStr = fileparts(fullfile(dataDir(view),[params.matFileName{end} '*']));
+        pathStr = getAllFiles(pathStr,'*gFit.mat',1);
+        
+        if isempty(pathStr) 
+            view = rmGridFit(view,params);
+        end
         view = rm_st_SearchFit(view,params);
 
         
