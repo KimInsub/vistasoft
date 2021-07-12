@@ -1057,6 +1057,11 @@ for n=1:2:numel(vararg),
 
         case {'cv'} % cross validation flag
             params.analysis.cv = logical(data);
+            
+            
+        case {'useparallel'} % cross validation flag
+            params.analysis.useparallel = logical(data);
+
 
         otherwise,
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...
