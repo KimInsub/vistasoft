@@ -15,8 +15,10 @@ for n=1:numel(model),
     % variables may have slightly different names
     ftmp   = {'x0','y0','s','x02','y02','s2','s_major','s_minor','s_theta', ...
         'rss','rss2','rsspos','rssneg','rawrss','rawrss2', 'exponent', ...
-        'tau_s','tau_ae','Lp','Kp','Kn','weight','varexpfitprf'};            
-            
+        'tau_s','tau_ae','Lp','Kp','Kn','weight','varexpfitprf', ...
+        'nn','tau1','tau2','delay'};            
+
+    
     % now get values from model and put in new slice values
     for fn = 1:numel(ftmp)
         % check whether data exists and has data in tmp structure

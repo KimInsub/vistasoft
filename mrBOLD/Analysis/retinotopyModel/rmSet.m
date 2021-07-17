@@ -171,7 +171,15 @@ switch lower(param),
         model.varexpfitprf = val;
     case {'cv_varexpfitprf'}
         model.cv_varexpfitprf = val;
-        
+    case {'tau1'}
+        model.tau1 = val;
+    case {'tau2'}
+        model.tau2 = val;
+    case {'delay'}
+        model.delay = val;
+    case {'nn'}
+        model.nn = val;
+
 
 	otherwise,
 		error('Unknown parameter: %s',param);
