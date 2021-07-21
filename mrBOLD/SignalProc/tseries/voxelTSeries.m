@@ -96,7 +96,8 @@ for iSlice = 1:length(sliceInds)
             voxelTcs(:,voxelsInSlice) = subtSeries;
         case {'Gray', 'Volume'},
             voxelTcs = subtSeries;
-			coords = view.coords(:,subIndices);
+            subIndicesCoords = subIndices(~isnan(subIndices));
+			coords = view.coords(:,subIndicesCoords);
         case 'Flat',
             voxelTcs = [voxelTcs subtSeries];
     end
