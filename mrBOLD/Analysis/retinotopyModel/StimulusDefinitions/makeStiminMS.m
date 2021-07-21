@@ -132,6 +132,29 @@ switch lower(params.analysis.pRFmodel{1})
         msStim = reshape(msStim, size(msStim,1)*size(msStim,2),[]);
         params.stim(id).images = msStim;
         
+    case {'st-upsampling60hz'}
+        [B,N] = RunLength_M(I.sequence(1,:));
+        fs = 1000;
+        Nx = round(N*(fs/60));
+        idx = find(Nx ==33);
+        assert(length(idx(3:3:end)),diff(sum(Nx),size(I.sequence,2)));
+        for ii = idx(3:3:end)
+            Nx(ii) = Nx(ii)+1;
+        end
+        seqLength = size(I.sequence,2)*(1000/60);
+        
+        msStim = zeros(size(I.images,1),seqLength,'single');
+        count = 1;
+        for jj = 1:length(B)
+            origIm = find(I.sequence(1,:)==B(jj)); origIm = origIm(1);
+            reps = Nx(jj);
+            msStim(:,count:(count+reps-1)) = repmat(I.images(:,origIm),[1 reps]);
+            count = count+reps;
+        end
+        params.stim(id).images = msStim;
+        
+    case {'st-nostimtimeupsampling'}
+        params.stim(id).images = I.images;
     otherwise
         error('Underdevelopment--- need to update to change ms to s stim')
         
