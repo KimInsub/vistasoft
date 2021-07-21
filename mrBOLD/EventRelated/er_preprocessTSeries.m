@@ -53,8 +53,9 @@ switch params.inhomoCorrect
         % do nothing
     case 1
         % divide by mean separately at each voxel
-        dc = mean(tSeries);
-        tSeries = tSeries./(ones(nFrames,1)*dc);
+        dc = mean(tSeries, 'omitnan');
+        dc(dc==0 | isnan(dc)) = Inf;  % prevents divide-by-zero warnings
+		tSeries = bsxfun(@rdivide, tSeries, dc);
     case 2
         % this should be easy w/ a trials struct
         error('Inhomogeneity correction by null condition not yet implemented.');
@@ -91,7 +92,8 @@ tSeries = detrendTSeries(tSeries,params.detrend,params.detrendFrames);
 
 % convert to % signal change
 if params.inhomoCorrect ~= 0
-    tSeries = tSeries - ones(nFrames,1)*mean(tSeries);
+    % (ERK): we don't want to subtract the mean again
+%     tSeries = tSeries - ones(nFrames,1)*mean(tSeries);
     tSeries = 100*tSeries;
 end
 
