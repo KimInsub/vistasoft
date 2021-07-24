@@ -160,6 +160,28 @@ switch lower(wSearch)
         fprintf(1,'[%s]: * WARNING:Resetting fitting parameters! *\n',mfilename);
         fprintf(1,'[%s]: *****************************************\n',mfilename);
         view = rmSearchFit(view,params);
+        
+    case {'8'}
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+        fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+        
+        
+%         
+%         pathStr = fileparts(fullfile(dataDir(view),[params.matFileName{end} '*']));
+%         saveTmodelName = strrep(params.analysis.temporalModel,'-','_');
+%         pathStr = getAllFiles(pathStr,['*' saveTmodelName '*gFit.mat'],1);
+         pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
+
+        if ~isfile(pathStr) 
+            view = rmGridFit(view,params);
+        else
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+            fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+        end
+        
+        view = rm_st_SearchFit(view,params);
 
         
     otherwise
@@ -169,7 +191,8 @@ end
 %-----------------------------------
 % Final fit (only for certain models)
 %-----------------------------------
-view = rmFinalFit(view,params);
-
+if ~strcmp(wSearch ,'8')
+    view = rmFinalFit(view,params);
+end
 % done
 return;

@@ -122,7 +122,9 @@ switch lower(params.analysis.pRFmodel{1})
         tmt = reshape(I.images,sqrt(size(I.images,1)),sqrt(size(I.images,1)),size(I.images,2));
         seq = I.sequence;
         offMask = zeros([size(tmt,1) size(tmt,2)]);
-        msStim = zeros(size(tmt,1),size(tmt,2),length(seq),'single');
+%         msStim = zeros(size(tmt,1),size(tmt,2),length(seq),'single');
+        msStim = zeros(size(tmt,1),size(tmt,2),length(seq));
+
         for eachimage = 1:length(seq)
             if seq(eachimage) == 0
                 msStim(:,:,eachimage) = offMask;
@@ -131,11 +133,25 @@ switch lower(params.analysis.pRFmodel{1})
             end
         end
         msStim = reshape(msStim, size(msStim,1)*size(msStim,2),[]);
-        params.stim(id).images = msStim;
         
+        %save it as sparse matrix to use memory efficiently
+        params.stim(id).images = sparse(msStim);
+%         params.stim(id).images = (msStim);
+
     otherwise
         error("Underdevelopment--- need to update to change ms to s stim")
         
+end
+
+% get the baseline estimate of the timecourse
+if params.analysis.doBlankBaseline == 1
+    params.stim(id).baseline = I.sec_sequence(params.stim(id).prescanDuration+1:end)==0;
+    
+    % shift 5 seconds to account for the HRF
+    params.stim(id).baseline = circshift(params.stim(id).baseline,6/params.stim(id).framePeriod);
+   
+    % and remove the initial junks (by product of the cirshift function)
+    params.stim(id).baseline(1:6) = 0;
 end
 
 % ALSO change prescandur to be in ms
