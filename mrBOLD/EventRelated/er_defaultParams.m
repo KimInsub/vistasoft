@@ -57,7 +57,7 @@ params.snrConds = 1;
 % flag for which hemodynamic impulse response 
 % function to use if applying a GLM:
 % -------------------------------------------
-% 0: deconovolve (selective averaging)
+% 0: deconvolve (selective averaging)
 % 1: estimate HRF from mean response to all non-null conditions
 % 2: Use Boynton et all 1998 gamma function
 % 3: Use SPM difference-of-gammas

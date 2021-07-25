@@ -3,20 +3,42 @@ function stimGrid = rmGridstPred(params,saveFlag)
 if notDefined('saveFlag')
     saveFlag =1;
 end
-
-c = Constants.getTemporalParams.temporalParams;
 temp_type = params.analysis.temporalModel;
-
-for i = 1:length(c)
-    if strcmp(c{i}.type, temp_type)
-        idx = i;
+if exist('Constants', 'var')
+    c = Constants.getTemporalParams.temporalParams;
+    
+    for i = 1:length(c)
+        if strcmp(c{i}.type, temp_type)
+            idx = i;
+        end
     end
+    temporal_param = c{idx}.prm;
+    fs             = c{idx}.fs;
+    num_channels   = c{idx}.num_channels;
+    
+    % define TR
+    tr = Constants.getTemporalParams.tr; % seconds
+    tnorm = Constants.getTemporalParams.tnorm; % seconds
+    
+else
+    
+    fs = 1000;
+    tr = params.stim.framePeriod;
+    tnorm = 1;
+    if regexp(params.analysis.temporalModel, '1ch-glm')==1
+        num_channels = 1;
+        temporal_param = [0 1]; % {'shift','scale'};
+    elseif regexp(params.analysis.temporalModel, '1ch-dcts')==1
+        num_channels = 1;
+        temporal_param = [0.05 0 0.1 2 0.1 0 1]; % default {'tau1', 'weight', 'tau2', 'n', 'sigma', 'shift', 'scale'};
+    elseif regexp(params.analysis.temporalModel, '2ch-exp-sig')==1
+        num_channels = 2;
+        temporal_param = [4.93 10000 0.1 0.3 3 0.5 0]; % default {'tau_s', 'tau_ae', 'lambda_p', 'kappa_p', 'kappa_n', 'weight','shift'}
+    end
+    
 end
 
-temporal_param = c{idx}.prm;
-fs             = c{idx}.fs;
-num_channels   = c{idx}.num_channels;
-scale_max = @(x) x./max(x(:));
+% scale_max = @(x) x./max(x(:));
 
 % define hrf
 hrf = canonical_hrf(1 / fs, [5 14 28]);

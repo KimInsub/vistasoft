@@ -106,7 +106,7 @@ end
 
 % Make a sampling grid
 [x, y, params]  = subSamplingGrid (params);
-
+ 
 % Spatially downsample the images to the X-Y grid
 I               = subSpatialDownsample(I, params);
 
@@ -118,7 +118,6 @@ switch lower(params.analysis.pRFmodel{1})
 
     case {'st'}
         fprintf(1,'[%s]: creating ms resolution images for stimulus %02d  ...\n', mfilename,id);
-
         tmt = reshape(I.images,sqrt(size(I.images,1)),sqrt(size(I.images,1)),size(I.images,2));
         seq = I.sequence;
         offMask = zeros([size(tmt,1) size(tmt,2)]);
@@ -136,10 +135,33 @@ switch lower(params.analysis.pRFmodel{1})
         
         %save it as sparse matrix to use memory efficiently
         params.stim(id).images = sparse(msStim);
-%         params.stim(id).images = (msStim);
+        
+    case {'st-upsampling60hz'}
+        [B,N] = RunLength_M(I.sequence(1,:));
+        fs = 1000;
+        Nx = round(N*(fs/60));
+        idx = find(Nx ==33);
+        assert(length(idx(3:3:end)),diff(sum(Nx),size(I.sequence,2)));
+        for ii = idx(3:3:end)
+            Nx(ii) = Nx(ii)+1;
+        end
+        seqLength = size(I.sequence,2)*(1000/60);
+        
+        msStim = zeros(size(I.images,1),seqLength,'single');
+        count = 1;
+        for jj = 1:length(B)
+            origIm = find(I.sequence(1,:)==B(jj)); origIm = origIm(1);
+            reps = Nx(jj);
+            msStim(:,count:(count+reps-1)) = repmat(I.images(:,origIm),[1 reps]);
+            count = count+reps;
+        end
+        params.stim(id).images = msStim;
+        
+    case {'st-nostimtimeupsampling'}
+        params.stim(id).images = I.images;
 
     otherwise
-        error("Underdevelopment--- need to update to change ms to s stim")
+        error('Underdevelopment--- need to update to change ms to s stim')
         
 end
 
@@ -250,9 +272,12 @@ function [x, y, params] = subSamplingGrid (params)
 % files. So safer to set it manually in the GUI.
 
 nSamples = params.analysis.numberStimulusGridPoints;
-mygrid = -params.analysis.fieldSize:params.analysis.sampleRate:params.analysis.fieldSize;
+% mygrid = -params.analysis.fieldSize:params.analysis.sampleRate:params.analysis.fieldSize;
+% 
+% [x,y]=meshgrid(mygrid,mygrid);
 
-[x,y]=meshgrid(mygrid,mygrid);
+tmp = single( linspace(-params.analysis.fieldSize, params.analysis.fieldSize, 1+nSamples*2) );
+[x,y] = meshgrid(tmp,tmp);
 
 % Update the sampling grid to reflect the sample points used.
 params.analysis.X = x(:);
@@ -260,7 +285,7 @@ params.analysis.Y = y(:);
 
 % Verify that the grid is the expected size.
 if length(params.analysis.X) ~= (1+nSamples*2)^2,
-    error('[%s]: error in grid creation', mfilename);
+   error('[%s]: error in grid creation', mfilename);
 end
 
 end

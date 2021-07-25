@@ -672,6 +672,7 @@ params.analysis.fmins.vethresh = 0;
 params.analysis.predDir = Constants.getDir.grid_dir;
 mkdir(params.analysis.predDir)
 
+
 %[IK] removed shuffled format & params.analysis.stimseq
 if isfield(params.analysis,'prefix')
     params.analysis.predFile = ...
