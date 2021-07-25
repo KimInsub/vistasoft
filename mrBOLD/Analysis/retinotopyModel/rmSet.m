@@ -154,6 +154,32 @@ switch lower(param),
         model.exponent = val;
     case {'pred_x'}
         model.pred_X = val;
+    
+    case {'tau_s'}
+        model.tau_s = val;
+    case {'tau_ae'}
+        model.tau_ae = val;
+    case {'lp'}
+        model.Lp = val;
+    case {'kp'}
+        model.Kp = val;
+    case {'kn'}
+        model.Kn = val;
+    case {'weight'}
+        model.weight = val;
+    case {'varexpfitprf'}
+        model.varexpfitprf = val;
+    case {'cv_varexpfitprf'}
+        model.cv_varexpfitprf = val;
+    case {'tau1'}
+        model.tau1 = val;
+    case {'tau2'}
+        model.tau2 = val;
+    case {'delay'}
+        model.delay = val;
+    case {'nn'}
+        model.nn = val;
+
 
 	otherwise,
 		error('Unknown parameter: %s',param);
