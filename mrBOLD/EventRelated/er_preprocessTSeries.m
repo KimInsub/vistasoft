@@ -94,7 +94,7 @@ tSeries = detrendTSeries(tSeries,params.detrend,params.detrendFrames);
 if params.inhomoCorrect ~= 0
     % (ERK): we don't want to subtract the mean again
 %     tSeries = tSeries - ones(nFrames,1)*mean(tSeries);
-    tSeries = 100*tSeries;
+    tSeries = 100*(tSeries-1);
 end
 
 return
