@@ -612,13 +612,13 @@ end
 params.analysis.fmins.options = optimset('fmincon');
 
 % Display iterations?
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','iter'); %'none','iter','final'
 
 % Maximum iterations. If set to zero it does not refine the parameters but
 % simply refits. This is useful to remove 'coarse-blurred' estimates below
 % a certain threshold.
 % GLU params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',25); % #
-params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',500); % #
+params.analysis.fmins.options = optimset(params.analysis.fmins.options,'MaxIter',100); % #
 
 % Precision of output (degrees). That is, stop if the estimate is
 % within TolX degrees:
@@ -650,32 +650,47 @@ params.analysis.fmins.refine = 'all';
 %+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 %+++++++++++++++++++++++++++++[[[[ Development ]]]]+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-% params.analysis.calcPC = 1;
 % params.analysis.coarseDecimate = 0; 
 % params.analysis.coarseToFine = false; %smoothing
 
-if contains(params.analysis.session,'no')
-    params.analysis.doDetrend = 0;
+% if contains(params.analysis.session,'no')
+%     params.analysis.doDetrend = 0;
+% else
+%     params.analysis.doDetrend = 1;
+% end
+if contains(params.analysis.temporalModel,'2ch')
+    params.analysis.nchan = 2;
 else
-    params.analysis.doDetrend = 1;
+    params.analysis.nchan = 1;
 end
+    
+    
+params.analysis.doDetrend = 1;
+params.analysis.doBlankBaseline = 1;
+params.analysis.fmins.vethresh = 0;
 
-if ~isfield(params.analysis,'predDir')
-%     params.analysis.predDir = Constants.getDir.grid_dir;
-    params.analysis.predDir = sprintf('./%s/gridPred',params.analysis.viewType);
-    if ~exist(params.analysis.predDir, 'dir'); mkdir(params.analysis.predDir); end
-else
-    % params.analysis.predDir = '../gridPred/';
-end
+params.analysis.predDir = Constants.getDir.grid_dir;
+mkdir(params.analysis.predDir)
+
 
 %[IK] removed shuffled format & params.analysis.stimseq
-params.analysis.predFile = ...
-    [params.analysis.predDir ...
-    params.analysis.prefix, ...
-    '_prfModel-' lower(params.analysis.pRFmodel{1}), ...
-    '_dur-' num2str(params.stim(1).nFrames), ...
-    '_tm-' params.analysis.temporalModel, ...
-    '_prediction.mat'];
+if isfield(params.analysis,'prefix')
+    params.analysis.predFile = ...
+        [params.analysis.predDir ...
+        params.analysis.prefix, ...
+        '_prfModel-' lower(params.analysis.pRFmodel{1}), ...
+        '_dur-' num2str(params.stim(1).nFrames), ...
+        '_tm-' params.analysis.temporalModel, ...
+        '_prediction.mat'];
+else
+     params.analysis.predFile = ...
+        [params.analysis.predDir ...
+        'prfModel-' lower(params.analysis.pRFmodel{1}), ...
+        '_dur-' num2str(params.stim(1).nFrames), ...
+        '_tm-' params.analysis.temporalModel, ...
+        '_prediction.mat'];
+end
+
 
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'Display','none'); %'none','iter','final'
 params.analysis.fmins.options = optimset(params.analysis.fmins.options,'TolX',1e-2); % degrees
@@ -1043,6 +1058,11 @@ for n=1:2:numel(vararg),
 
         case {'cv'} % cross validation flag
             params.analysis.cv = logical(data);
+            
+            
+        case {'useparallel'} % cross validation flag
+            params.analysis.useparallel = logical(data);
+
 
         otherwise,
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...

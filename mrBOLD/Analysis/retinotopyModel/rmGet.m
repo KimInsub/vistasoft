@@ -210,7 +210,9 @@ try
             val = max(val, 0);
             val = min(val, 1);
         case 'varexpfitprf'
-            val = model.varExp;
+            val = model.varexpfitprf;
+        case 'cv_varexpfitprf'
+            val = model.cv_varexpfitprf;
         case {'coh','coherence'}
             warning('off','MATLAB:divideByZero');
             val = sqrt(rmGet(model,'variance explained'));

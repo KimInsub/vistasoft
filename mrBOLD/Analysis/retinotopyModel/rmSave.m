@@ -37,8 +37,8 @@ end;
 % we do this for the following parameters
 fnames = {'x','y','x02','y02','sigmamajor','sigmaminor','sigmatheta',...
     'sigma2major','sigma2minor','sigma2theta',...
-    'b','rss','rss2','rsspos','rssneg','rawrss','rawrss2', 'exponent', ...
-    'pred_X'};
+    'b','rss','rss2','rsspos','rssneg','rawrss','rawrss2', 'exponent'} ;
+%... 'pred_X'};
 for m = 1:length(model),
     for f = 1:length(fnames),
         param = rmGet(model{m},fnames{f});
