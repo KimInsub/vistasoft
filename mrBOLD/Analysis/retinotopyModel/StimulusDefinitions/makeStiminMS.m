@@ -133,24 +133,28 @@ switch lower(params.analysis.pRFmodel{1})
         params.stim(id).images = msStim;
         
     case {'st-upsampling60hz'}
-        [B,N] = RunLength_M(I.sequence(1,:));
-        fs = 1000;
-        Nx = round(N*(fs/60));
-        idx = find(Nx ==33);
-        assert(length(idx(3:3:end)),diff(sum(Nx),size(I.sequence,2)));
-        for ii = idx(3:3:end)
-            Nx(ii) = Nx(ii)+1;
+        trLength = length(I.sequence)/60;
+        xq = 0:0.001:(trLength-(1/60));
+        t  = 0:1/60:((length(I.sequence)-1)/60);
+        for jj = 1:size(I.sequence,1)
+            newSeq(jj,:) = interp1(t,I.sequence(jj,:),xq, 'previous');
         end
-        seqLength = size(I.sequence,2)*(1000/60);
         
-        msStim = zeros(size(I.images,1),seqLength,'single');
+        [Bnew,Nnew] = RunLength_M(newSeq(1,:));
+        [Bold,Nold] = RunLength_M(I.sequence(1,:));
+        assert(isequal(Bnew,Bold));
+        
+        repeats = (Nnew-Nold);
+        msStim = zeros(size(I.images,1),length(newSeq),'single');
         count = 1;
-        for jj = 1:length(B)
-            origIm = find(I.sequence(1,:)==B(jj)); origIm = origIm(1);
-            reps = Nx(jj);
+        for mm = 1:length(Bold)
+            origIm = find(I.sequence(1,:)==Bold(mm)); origIm = origIm(1);
+            reps = Nnew(mm);
             msStim(:,count:(count+reps-1)) = repmat(I.images(:,origIm),[1 reps]);
             count = count+reps;
         end
+        I.sequence = newSeq;
+        I.images = msStim;
         params.stim(id).images = msStim;
         
     case {'st-nostimtimeupsampling'}
