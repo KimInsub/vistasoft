@@ -42,7 +42,18 @@ function vw = percentTSeries(vw, scanNum, sliceNum, detrend,...
 %                           by slice so to that each frame has the same
 %                           mean intensity. See doTemporalNormlalization
 %                           [default = false]
-%   noMeanRemove:       Hmm. Can someone explain this?
+%   noMeanRemove:      Hmm. Can someone explain this?
+%                        [ERK] I believe historically, VistaSoft dealt with
+%                        experiments where centering around the mean (after dividing
+%                        by the mean) made sense, e.g. when you always have a 
+%                        stimulus on the screen (rotating wedge, expanding
+%                        ring). But if mean is not ~1, subtracting the mean
+%                        can causes unwanted effects, such as negative
+%                        baseline condition or data centered around 0.
+%                        Side note: I think it would be better to not use a
+%                        variable with a double negative, but rather have 
+%                        "doRemoveMean", or "doSubtract1".
+%                        
 %
 % OUTPUTS
 % -------
@@ -145,20 +156,29 @@ switch inhomoCorrection
 end
 
 % Remove trend
-%
 if detrend
 	ptSeries = detrendTSeries(ptSeries,detrend,detrendFrames(vw,scanNum));
 end
 
 % Subtract the mean
-% Used to just subtract 1 under the assumption that we had already divided by
-% the mean, but now with the spatialGrad option the mean may not be exactly 1.
-%
-if noMeanRemove==0
-	ptSeries = bsxfun(@minus, ptSeries, mean(ptSeries));
-	% Multiply by 100 to get percent
-	%
-	ptSeries = 100*ptSeries;
+if inhomoCorrection == 0
+    % Do nothing
+elseif inhomoCorrection > 0   
+    if noMeanRemove==0
+        % Remove mean if requested: Best for spatialGrad, see old comment
+        % below: "Used to just subtract 1 under the assumption that we had
+        % already divided by the mean, but now with the spatialGrad option
+        % the mean may not be exactly 1."
+        ptSeries = bsxfun(@minus, ptSeries, mean(ptSeries));
+        
+        % Multiply by 100 to get percent
+        ptSeries = 100*ptSeries;
+    else 
+        % Just subtract 1 and multiply by 100 to get percent. Here, we
+        % assume data range from 0-1, before multiplying by 100.
+        % Would be the same as removing mean, if mean = 1.
+        ptSeries = 100*(ptSeries-1);
+    end
 end
 
 % Set fields in view structure
