@@ -152,7 +152,12 @@ r = vw.selectedROI;
 coords = vw.ROIs(r).coords;
 
 % index into view's data
-[coordsIndex, coords] = roiIndices(vw, coords, preserveCoords);
+if strcmpi(vw.viewType,'inplane') && strcmpi(params.analysis.pRFmodel{1},'st')
+    [coordsIndex, ~] = roiIndices(vw, coords, preserveCoords);
+else
+    [coordsIndex, coords] = roiIndices(vw, coords, preserveCoords);
+end
+
 % do we want to recompute coords? this is good for gray views, in case ROI
 % voxels are missing from the slice prescription. but might it cause
 % problems for inplane models? 
@@ -190,15 +195,21 @@ else % old approach
     else                                 roiSlices = 1; end;
 
 	tSeries  = [];
-
-	% loop over slices and load data
-	for roiSlice = roiSlices,
-		vw.tSeriesSlice = roiSlice;
-		vw.tSeriesScan  = scannum;
-		vw.tSeries      = loadtSeries(vw, scannum, roiSlice);
-		tSeries         = [tSeries getTSeriesROI(vw, coords, 1)];
-	end;
-
+    if strcmpi(vw.viewType,'inplane') && strcmpi(params.analysis.pRFmodel{1},'st')
+        vw.tSeries = loadtSeries(vw, scannum, roiSlices);
+        vw.tSeriesSlice = roiSlices;
+        vw.tSeriesScan  = scannum;
+        tSeries = getTSeriesROI(vw,coords,0);
+%       tSeries = getTSeriesROI(vw,coords,1);
+    else
+        % loop over slices and load data
+        for roiSlice = roiSlices,
+            vw.tSeriesSlice = roiSlice;
+            vw.tSeriesScan  = scannum;
+            vw.tSeries      = loadtSeries(vw, scannum, roiSlice);
+            tSeries         = [tSeries getTSeriesROI(vw, coords, 1)];
+        end;
+    end
 	% ras 01/09: only convert to percent change if the flag is set
 	if params.analysis.calcPC, tSeries  = raw2pc(tSeries);  end
 %     if params.analysis.doBlankBaseline

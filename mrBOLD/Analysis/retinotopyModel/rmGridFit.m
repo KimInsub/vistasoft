@@ -221,7 +221,6 @@ for slice=loopSlices
         rng('default') % For reproducibility
         cv_split = cvpartition(nStim,'KFold',3);
         numFolds = cv_split.NumTestSets;
-        
     else
         %         prediction = [];
         numFolds= 1;
@@ -408,7 +407,7 @@ end
 % apply beta and calculate varexp
 for fold = 1:numFolds
     df(fold).varexp =[];
-    df    = st_applyBeta(df,fold);
+    df    = st_applyBeta(df,fold,params);
     
     %             df(fold).roiVarExp = df(fold).varexp;
     %             df(fold).roiVarExp = df(fold).cv_varexp;

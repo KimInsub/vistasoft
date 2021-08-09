@@ -22,16 +22,15 @@ dims     = viewGet(view,'datasize');
 % if roi
 coords = rmGet(model{1},'roicoords');
 coordsInd = rmGet(model{1},'roiIndex');
-if ~isempty(coords),
-    switch lower(viewGet(view,'viewType')),
+if ~isempty(coords)
+    switch lower(viewGet(view,'viewType'))
         case {'gray'}
             allcoords = viewGet(view,'coords');
         case {'inplane'}
             allcoords = viewGet(view,'coords');
             allcoords = ip2functionalCoords(view, allcoords);
-                
-    end;
-end;
+    end
+end
 
 % if param is dimSize we have to reshape if
 % we do this for the following parameters
@@ -50,22 +49,24 @@ for m = 1:length(model),
                         % if beta then all components are stored in 4th dimension
                         switch lower(fnames{f})
                             case 'b',
+                                param = param;
+
                                 % could do in one step but I'm concerned about the
                                 % ordering
-                                d = length(size(param));
-                                newparam = zeros([dims size(param,d)]);
-                                for ii = 1:size(param,d),
-                                    switch d
-                                        case 4
-                                            newparam(:,:,:,ii) = myreshape(param(:,:,:,ii),dims,coordsInd);
-                                        case 3
-                                            newparam(:,:,:,ii) = myreshape(param(:,:,ii),dims,coordsInd);
-                                    end
-                                end;
-                                param = newparam;
+%                                 d = length(size(param));
+%                                 newparam = zeros([dims size(param,d)]);
+%                                 for ii = 1:size(param,d),
+%                                     switch d
+%                                         case 4
+%                                             newparam(:,:,:,ii) = myreshape(param(:,:,:,ii),dims,coordsInd);
+%                                         case 3
+%                                             newparam(:,:,:,ii) = myreshape(param(:,:,ii),dims,coordsInd);
+%                                     end
+%                                 end;
+%                                 param = newparam;
                             otherwise,
-                                param = myreshape(param,dims,coordsInd);
-                                
+%                                 param = myreshape(param,dims,coordsInd);
+                                param = param;
                         end
                     catch ME
                         disp('Parameter size error.')
@@ -168,6 +169,7 @@ if exist(pathStr,'file')
 end
 % model{1}.df = df;
 % save
+mkdir(fileparts(pathStr));
 save(pathStr,'model','params','df','-v7.3');
 
 fprintf(1,'[%s]:Saved %s.\n',mfilename,pathStr);
