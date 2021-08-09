@@ -88,12 +88,19 @@ switch params.inhomoCorrect
 end
 
 % detrend
-tSeries = detrendTSeries(tSeries,params.detrend,params.detrendFrames);
+if params.detrend
+    tSeries = detrendTSeries(tSeries,params.detrend,params.detrendFrames);
+end
 
 % convert to % signal change
-if params.inhomoCorrect ~= 0
-    % (ERK): we don't want to subtract the mean again
-%     tSeries = tSeries - ones(nFrames,1)*mean(tSeries);
+if params.inhomoCorrect == 0
+    % don't do anything
+elseif params.inhomoCorrect == 1
+    % Subtract 1 (assuming mean = 1)
+    tSeries = 100*(tSeries-1);
+elseif params.inhomoCorrect == 3
+    % Subtract mean, before computing percent 
+    tSeries = tSeries - ones(nFrames,1)*mean(tSeries);
     tSeries = 100*tSeries;
 end
 
