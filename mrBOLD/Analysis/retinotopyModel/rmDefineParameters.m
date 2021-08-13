@@ -668,6 +668,8 @@ end
 params.analysis.doDetrend = 1;
 params.analysis.doBlankBaseline = 1;
 params.analysis.fmins.vethresh = 0;
+params.analysis.fmins.topthres = 1;
+params.analysis.fmins.topthresNumber = 100;
 
 params.analysis.predDir = Constants.getDir.grid_dir;
 mkdir(params.analysis.predDir)

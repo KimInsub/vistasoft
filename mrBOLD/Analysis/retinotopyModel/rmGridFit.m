@@ -224,8 +224,8 @@ for slice=loopSlices
     else
         %         prediction = [];
         numFolds= 1;
-        cv_split.training = 1;
-        cv_split.test = 1;
+        cv_split.training = 1:nStim;
+        cv_split.test = 1:nStim;
         
     end
     
