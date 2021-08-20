@@ -674,6 +674,10 @@ params.analysis.fmins.topthresNumber = 100;
 params.analysis.predDir = Constants.getDir.grid_dir;
 mkdir(params.analysis.predDir)
 
+if ~isfield(params.analysis,'normrf')
+    params.analysis.normrf = false;
+end
+
 
 %[IK] removed shuffled format & params.analysis.stimseq
 if isfield(params.analysis,'prefix')
@@ -1065,6 +1069,8 @@ for n=1:2:numel(vararg),
         case {'useparallel'} % cross validation flag
             params.analysis.useparallel = logical(data);
 
+        case {'normrf'} % normalized RF validation flag
+            params.analysis.normrf = logical(data);
 
         otherwise,
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...
