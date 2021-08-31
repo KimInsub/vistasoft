@@ -674,8 +674,8 @@ params.analysis.fmins.topthresNumber = 100;
 params.analysis.predDir = Constants.getDir.grid_dir;
 mkdir(params.analysis.predDir)
 
-if ~isfield(params.analysis,'normrf')
-    params.analysis.normrf = false;
+if ~isfield(params.analysis,'normStimRF')
+    params.analysis.normStimRF = false;
 end
 
 
@@ -1069,8 +1069,8 @@ for n=1:2:numel(vararg),
         case {'useparallel'} % cross validation flag
             params.analysis.useparallel = logical(data);
 
-        case {'normrf'} % normalized RF validation flag
-            params.analysis.normrf = logical(data);
+        case {'normstimrf'} % normalized RF validation flag
+            params.analysis.normStimRF = logical(data);
 
         otherwise,
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...
