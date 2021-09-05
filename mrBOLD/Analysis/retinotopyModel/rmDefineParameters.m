@@ -667,19 +667,33 @@ end
     
 params.analysis.doDetrend = 1;
 params.analysis.doBlankBaseline = 1;
-params.analysis.fmins.vethresh = 0;
-params.analysis.fmins.topthres = 1;
-params.analysis.fmins.topthresNumber = 100;
 
-params.analysis.predDir = Constants.getDir.grid_dir;
-mkdir(params.analysis.predDir)
+% threshold methods
+params.analysis.fmins.vethresh = 0;
+params.analysis.fmins.threshtype = 'linear_top100';
+switch lower(params.analysis.fmins.threshtype)
+    case 'top100'           % find triangular grid positions
+        params.analysis.fmins.topthres = 1;
+        params.analysis.fmins.topthresNumber = 100;
+    case 'linear_top100'                % find polar grid positions
+        params.analysis.fmins.topthres = 1;
+        params.analysis.fmins.topthresNumber = 100;
+        params.analysis.fmins.linearModelThresh = 1;
+    otherwise
+        error('[%s]:Unknown grid type: %s',mfilename,...
+            params.analysis.fmins.threshtype);
+end
+
+
 
 if ~isfield(params.analysis,'normStimRF')
     params.analysis.normStimRF = false;
 end
 
 
-%[IK] removed shuffled format & params.analysis.stimseq
+params.analysis.predDir = Constants.getDir.grid_dir;
+mkdir(params.analysis.predDir)
+
 if isfield(params.analysis,'prefix')
     params.analysis.predFile = ...
         [params.analysis.predDir ...
@@ -1064,7 +1078,6 @@ for n=1:2:numel(vararg),
 
         case {'cv'} % cross validation flag
             params.analysis.cv = logical(data);
-            
             
         case {'useparallel'} % cross validation flag
             params.analysis.useparallel = logical(data);
