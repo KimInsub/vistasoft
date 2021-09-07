@@ -166,14 +166,10 @@ switch lower(wSearch)
         fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
         fprintf(1,'[%s]: *****************************************\n',mfilename);
         
-        
-%         
-%         pathStr = fileparts(fullfile(dataDir(view),[params.matFileName{end} '*']));
-%         saveTmodelName = strrep(params.analysis.temporalModel,'-','_');
-%         pathStr = getAllFiles(pathStr,['*' saveTmodelName '*gFit.mat'],1);
-         pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
+        grid_pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
+        search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
 
-        if ~isfile(pathStr) 
+        if ~isfile(grid_pathStr) 
             view = rmGridFit(view,params);
         else
             fprintf(1,'[%s]: *****************************************\n',mfilename);
@@ -181,9 +177,14 @@ switch lower(wSearch)
             fprintf(1,'[%s]: *****************************************\n',mfilename);
         end
         
-        view = rm_st_SearchFit(view,params);
-
-        
+        if ~isfile(search_pathStr)
+            view = rm_st_SearchFit(view,params);
+        else
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+            fprintf(1,'[%s]: *********   Skipping Search fit   *********\n',mfilename);
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+        end
+       
     otherwise
         error('[%s]:Unknown search option: %s',mfilename,wSearch);
 end
