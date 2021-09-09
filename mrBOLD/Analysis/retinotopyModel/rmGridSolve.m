@@ -338,14 +338,14 @@ for n=1:numel(params.analysis.pRFmodel),
             model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
             
         case {'st'}
-            temporal = st_getTemporalAttributes(params);
+            tmp = getTemporalParams(params);
             
-            if temporal.num_channels == 1
+            if tmp.analysis.temporal.num_channels == 1
                 model{n} = rmSet(model{n},'b'   ,zeros(d1,d2,nt+1));
                 model{n} = rmSet(model{n},'desc','1ch spatiotemporal pRF fit');
                 model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
 
-            elseif temporal.num_channels == 2
+            elseif tmp.analysis.temporal.num_channels == 2
                 model{n} = rmSet(model{n},'b'   ,zeros(d1,d2,nt+2));
                 model{n} = rmSet(model{n},'desc','2ch spatiotemporal pRF fit');
                 model{n} = rmSet(model{n},'exponent', fillwithzeros+1);
