@@ -130,7 +130,8 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
 
     elseif ~isfile(params.analysis.predFile)
         %         stimGrid = rmGridstPred(params);
-        stimGrid = rmGridstPred2(params);
+%         stimGrid = rmGridstPred2(params);
+        stimGrid = rmGridstPred3(params);
 
     end
     % assign each grid to params
