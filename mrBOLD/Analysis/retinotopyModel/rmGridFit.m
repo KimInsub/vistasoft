@@ -136,7 +136,7 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
     end
     % assign each grid to params
     for es = 1:length(params.stim)
-        params.stim(es).prediction = stimGrid(es).prediction;
+        params.stim(es).prediction = full(stimGrid(es).prediction);
     end
     
 %     prediction=cat(1,stimGrid.prediction);
