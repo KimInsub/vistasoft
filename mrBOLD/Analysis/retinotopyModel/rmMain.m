@@ -205,7 +205,7 @@ end
 %-----------------------------------
 % Final fit (only for certain models)
 %-----------------------------------
-if ~strcmp(wSearch ,'1') && ~strcmp(wSearch ,'8')
+if ~strcmp(wSearch ,'1') && ~strcmp(wSearch ,'8') && ~strcmp(wSearch ,'9')
     view = rmFinalFit(view,params);
 end
 % done
