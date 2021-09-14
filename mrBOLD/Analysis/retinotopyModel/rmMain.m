@@ -184,7 +184,20 @@ switch lower(wSearch)
             fprintf(1,'[%s]: *********   Skipping Search fit   *********\n',mfilename);
             fprintf(1,'[%s]: *****************************************\n',mfilename);
         end
-       
+    case {'9'}
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+        fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+        
+        grid_pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
+        if ~isfile(grid_pathStr)
+            view = rmGridFit(view,params);
+        else
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+            fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+        end
+        
     otherwise
         error('[%s]:Unknown search option: %s',mfilename,wSearch);
 end
