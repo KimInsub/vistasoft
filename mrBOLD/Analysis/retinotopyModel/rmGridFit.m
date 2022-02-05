@@ -132,6 +132,7 @@ elseif strcmp(params.analysis.pRFmodel{1}, 'st')
         %         stimGrid = rmGridstPred(params);
 %         stimGrid = rmGridstPred2(params);
         stimGrid = rmGridstPred3(params);
+%         stimGrid = rmGridstPred4(params);
 
     end
     % assign each grid to params

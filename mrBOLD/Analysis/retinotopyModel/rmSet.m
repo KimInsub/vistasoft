@@ -154,7 +154,9 @@ switch lower(param),
         model.exponent = val;
     case {'pred_x'}
         model.pred_X = val;
-    
+    case {'tau_t'}
+        model.tau_t = val;
+
     case {'tau_s'}
         model.tau_s = val;
     case {'tau_ae'}

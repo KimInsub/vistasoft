@@ -507,9 +507,13 @@ switch params.analysis.pRFmodel{1}
     
     case {'st'}
         % The number of exponents for nonlinear model (pred = (stim*prf)^exponent)
-        
         % without CSS for now %%%%%%%%%%%
-        params.analysis.numberExponents = 1 ;
+        params.analysis.doBlankBaseline = 1;
+        if strcmp(params.analysis.temporalModel,'3ch-stLN')
+             params.analysis.numberExponents = 4 ;
+        else
+            params.analysis.numberExponents = 1 ;
+        end
         
         numberOfGridPoints          = length(keep);
         
@@ -521,10 +525,14 @@ switch params.analysis.pRFmodel{1}
         params.analysis.exponent    = params.analysis.exponent(:);
         
         % 24 unqiue steps here
-        params.analysis.sigmaMajor  = repmat(flipud(z(keep)),(params.analysis.numberExponents),1); 
-%         params.analysis.sigmaMajor  = params.analysis.sigmaMajor .* sqrt(params.analysis.exponent);
+        params.analysis.sigmaMajor  = repmat(flipud(z(keep)),(params.analysis.numberExponents),1);
+        params.analysis.sigmaMajor  = params.analysis.sigmaMajor .* sqrt(params.analysis.exponent);
         params.analysis.sigmaMinor  = params.analysis.sigmaMajor;
         params.analysis.theta       = params.analysis.sigmaMajor * 0;
+
+%         params.analysis.sigmaMajor  = repmat(flipud(z(keep)),(params.analysis.numberExponents),1); 
+%         params.analysis.sigmaMinor  = params.analysis.sigmaMajor;
+%         params.analysis.theta       = params.analysis.sigmaMajor * 0;
 
 
                 
@@ -551,7 +559,8 @@ mygridx = (-params.analysis.fieldSize:...
 %   portion of the image: figure; imagesc(params.analysis.Y); colorbar;
 %   After the flip, this produces positive values in the upper portion of 
 %   the image: figure; imagesc(params.analysis.Y); colorbar;
-params.analysis.Y = flipud(params.analysis.Y);
+% params.analysis.Y = flipud(params.analysis.Y);
+params.analysis.Y = -1*(params.analysis.Y);
 
 % rmMakeStimulus by default limits the sample points to those where a
 % stimulus was actually presented. This remains the default. 
@@ -658,18 +667,11 @@ params.analysis.fmins.refine = 'all';
 % else
 %     params.analysis.doDetrend = 1;
 % end
-if contains(params.analysis.temporalModel,'2ch')
-    params.analysis.nchan = 2;
-else
-    params.analysis.nchan = 1;
-end
-    
-    
-params.analysis.doDetrend = 1;
-params.analysis.doBlankBaseline = 1;
 
+params.analysis.doDetrend = 1;
+    
 % threshold methods
-params.analysis.fmins.vethresh = 0; % defualt is to (varexp > 0)
+params.analysis.fmins.vethresh = 0.2; % defualt is to (varexp > 0)
 params.analysis.fmins.threshtype = 'linear_top100';
 switch lower(params.analysis.fmins.threshtype)
     case 'top100'           % find triangular grid positions
@@ -1084,6 +1086,12 @@ for n=1:2:numel(vararg),
 
         case {'normstimrf'} % normalized RF validation flag
             params.analysis.normStimRF = logical(data);
+            
+        case {'userinputdata'} % path to user input data file
+            params.analysis.userInputData = data;
+            
+        case {'usegpu'} % useGPU
+            params.useGPU = logical(data);
 
         otherwise,
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...

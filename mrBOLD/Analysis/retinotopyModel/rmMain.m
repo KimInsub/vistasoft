@@ -127,40 +127,6 @@ switch lower(wSearch)
         view = rmGridFit(view,params);
         view = rmSearchFit(view,params);
         
-    case {'4','3 stage coarse to fine fit','coarse to fine 2'}
-        fprintf(1,'[%s]:Three stage coarse-to-fine fit.\n',mfilename);
-        view = rmGridFit(view,params);
-        view = rmSearchFit(view,params,params.analysis.coarseDecimate);
-        view = rmSearchFit(view,params);
-
-    case {'5','3x2 stage coarse to fine fit','coarse to fine and hrf'}
-        fprintf(1,'[%s]:3x2 pRF & HRF stage coarse-to-fine fit.\n',mfilename);
-        view = rmGridFit(view,params);
-        view = rmSearchFit(view,params,params.analysis.coarseDecimate);
-        view = rmSearchFit(view,params);
-        view = rmFinalFit(view,params);
-        [view,params] = rmHrfSearchFit(view,params);
-        view = rmFinalFit(view,params);
-        view = rmSearchFit(view,params);
-
-
-    case {'6','hrf coarse to fine fit','hrf'}
-        [view, params] = rmHrfSearchFit(view, params);
-        view = rmFinalFit(view,params);
-        view = rmSearchFit(view, params);
-        
-    case {'7','search fit and reset params'}
-        % Modify existing fit AND refresh the parameters. This is
-        % particularly useful when the initial model is estimated from a
-        % different data-set (or stimulus). 
-        % If you do not want to reset the fitting params see option 2
-        % above.
-        fprintf(1,'[%s]:Refining fit above a certain threshold (fine fit).\n',mfilename);
-        fprintf(1,'[%s]: *****************************************\n',mfilename);
-        fprintf(1,'[%s]: * WARNING:Resetting fitting parameters! *\n',mfilename);
-        fprintf(1,'[%s]: *****************************************\n',mfilename);
-        view = rmSearchFit(view,params);
-        
     case {'8'}
         fprintf(1,'[%s]: *****************************************\n',mfilename);
         fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
@@ -170,33 +136,46 @@ switch lower(wSearch)
         search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
 
         if ~isfile(grid_pathStr) 
-            view = rmGridFit(view,params);
+            view = stGridFit(view,params);
+%             view = rmGridFit(view,params);
         else
             fprintf(1,'[%s]: *****************************************\n',mfilename);
             fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
             fprintf(1,'[%s]: *****************************************\n',mfilename);
         end
         
-        if ~isfile(search_pathStr)
-            view = rm_st_SearchFit(view,params);
-        else
-            fprintf(1,'[%s]: *****************************************\n',mfilename);
-            fprintf(1,'[%s]: *********   Skipping Search fit   *********\n',mfilename);
-            fprintf(1,'[%s]: *****************************************\n',mfilename);
-        end
+%         view = rm_st_SearchFit(view,params);
+        view = stSearchFit(view,params);
+
+%         if ~isfile(search_pathStr)
+%             view = rm_st_SearchFit(view,params);
+%         else
+%             fprintf(1,'[%s]: *****************************************\n',mfilename);
+%             fprintf(1,'[%s]: *********   Skipping Search fit   *********\n',mfilename);
+%             fprintf(1,'[%s]: *****************************************\n',mfilename);
+%         end
     case {'9'}
-        fprintf(1,'[%s]: *****************************************\n',mfilename);
-        fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
-        fprintf(1,'[%s]: *****************************************\n',mfilename);
         
-        grid_pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
-        if ~isfile(grid_pathStr)
-            view = rmGridFit(view,params);
-        else
-            fprintf(1,'[%s]: *****************************************\n',mfilename);
-            fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
-            fprintf(1,'[%s]: *****************************************\n',mfilename);
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+        fprintf(1,'[%s]: *    ST model  create Grid              *\n',mfilename);
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+
+        if ~isfile(params.analysis.predFile)
+            view = stCreateGrid(view,params);
         end
+
+%         fprintf(1,'[%s]: *****************************************\n',mfilename);
+%         fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
+%         fprintf(1,'[%s]: *****************************************\n',mfilename);
+%         
+%         grid_pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
+%         if ~isfile(grid_pathStr)
+%             view = rmGridFit(view,params);
+%         else
+%             fprintf(1,'[%s]: *****************************************\n',mfilename);
+%             fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
+%             fprintf(1,'[%s]: *****************************************\n',mfilename);
+%         end
         
     otherwise
         error('[%s]:Unknown search option: %s',mfilename,wSearch);

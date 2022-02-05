@@ -1,4 +1,4 @@
-function [range TolFun] = rmSearchFit_range(params,model,data)
+function [range, TolFun] = rmSearchFit_range(params,model,data)
 % rmSearchFit_range - estimate boundaries for fmincon
 %  
 % boundary = rmSearchFit_boundary(params,startparams)
@@ -42,7 +42,7 @@ gridSigmas_unique = unique(params.analysis.sigmaMajor);
 
 % add min and max limit:
 % FIX ME: 0.01 should not be hardcoded here...
-gridSigmas = [0.01.*ones(expandRange,1); ...
+gridSigmas = [0.015.*ones(expandRange,1); ...
               gridSigmas_unique; ...
               params.analysis.maxRF.*ones(expandRange,1)];
 gridSigmas = double(gridSigmas);
@@ -89,15 +89,21 @@ if isfield(model, 'exp')
     fieldnum=size(range.start, 1)+1;
     range.start(fieldnum,:) = model.exp;
     gridExps_unique=unique(params.analysis.exp);
-    gridExps=[min(gridExps_unique).*ones(expandRange,1); gridExps_unique; max(gridExps_unique).*ones(expandRange,1)];
-    gridExps=double(gridExps);
-    gridExps_matrix  = gridExps_unique(:)*ones(1,size(range.start,2));
-    startExps_matrix = ones(size(gridExps_matrix,1),1)*range.start(fieldnum,:);
-    [tmp, closestvalue] = sort(abs(gridExps_matrix-startExps_matrix));
-    closestvalue    = closestvalue(1,:)+expandRange;
-
-    range.upper(fieldnum,:) = gridExps(closestvalue+2);%expandRange);
-    range.lower(fieldnum,:) = gridExps(closestvalue-2);%expandRange);
+    if numel(gridExps_unique) ~= 1
+        gridExps=[min(gridExps_unique).*ones(expandRange,1); gridExps_unique; max(gridExps_unique).*ones(expandRange,1)];
+        gridExps=double(gridExps);
+        gridExps_matrix  = gridExps_unique(:)*ones(1,size(range.start,2));
+        startExps_matrix = ones(size(gridExps_matrix,1),1)*range.start(fieldnum,:);
+        [tmp, closestvalue] = sort(abs(gridExps_matrix-startExps_matrix));
+        closestvalue    = closestvalue(1,:)+expandRange;
+        
+        range.upper(fieldnum,:) = gridExps(closestvalue+2);%expandRange);
+        range.lower(fieldnum,:) = gridExps(closestvalue-2);%expandRange);
+        
+    else
+        range.upper(fieldnum,:) = ones(1,size(range.start,2));%expandRange);
+        range.lower(fieldnum,:) = ones(1,size(range.start,2));%expandRange);        
+    end
 end
 
 % reset stopping criteria relative to rawrss

@@ -1,18 +1,16 @@
 function model = rmGridFit_spatiotemporal(model,prediction,data,params,t)
-% rmGridFit_oneGaussianNonlinear - core of one non-linear (exponential) Gaussian fit
-% CSS or compressive spatial summation model
-%
+% rmGridFit_spatiotemporal - core of one non-linear (exponential) Gaussian fit
 % model = rmGridFit_oneGaussian(model,prediction,data,params);
 %
-% 2014/02 JW: duplicated from rmGridFit_oneGaussian, then exponent added to
 % model
 
 % input check 
 if nargin < 4,
     error('Not enough arguments');
 end
-
-nchan = size(prediction,3);
+% cellfun(@(x) x(1,:,:), prediction)
+% nchan = length(unique(params.analysis.combineNeuralChan));
+nchan = getChanNumber(params);
 
 trends         = t.trends;
 t_id           = t.dcid+nchan;
@@ -25,21 +23,25 @@ startfind = zeros(1,size(data,2));
 %--- another loop --- and a slow one too
 %-----------------------------------
 tic; progress = 0;
-
-
+% 
+% if params.useGPU
+%     prediction = gpuArray(prediction);
+%     data = gpuArray(data);
+%     trends = gpuArray(trends);
+% end
 
 %%
 % % % normalize channels
-if strcmp(params.analysis.pRFmodel{1}, 'st')
-if size(prediction,3) == 2
-    for ii = 1:size(prediction,2) % 720       82608           2
-        maxS = max(max(prediction(:,ii,1)));
-        maxT = max(max(prediction(:,ii,2)));
-        normTs(ii) = maxS / maxT;
-        prediction(:,ii,2) = prediction(:,ii,2) * normTs(ii);
-    end
-end
-end
+% if strcmp(params.analysis.pRFmodel{1}, 'st')
+% if size(prediction,3) == 2
+%     for ii = 1:size(prediction,2) % 720       82608           2
+%         maxS = max(max(prediction(:,ii,1)));
+%         maxT = max(max(prediction(:,ii,2)));
+%         normTs(ii) = maxS / maxT;
+%         prediction(:,ii,2) = prediction(:,ii,2) * normTs(ii);
+%     end
+% end
+% end
 
 
 
@@ -48,11 +50,15 @@ end
 
 warning('off', 'MATLAB:lscov:RankDefDesignMat')
 for n=1:numel(params.analysis.x0)
-    %-----------------------------------
+%     if mod(n,100) == 0
+%         disp(n)
+%         esttime = 1;
+%     end
+        %-----------------------------------
     % progress monitor (10 dots) and time indicator
     %-----------------------------------
     if floor(n./numel(params.analysis.x0).*10)>progress
-        if progress==0,
+        if progress==0
             % print out estimated time left
             esttime = toc.*10;
             if floor(esttime./3600)>0
@@ -74,14 +80,29 @@ for n=1:numel(params.analysis.x0)
     %-----------------------------------
     % minimum RSS fit
 %     X    = [prediction(:,n,1) prediction(:,n,2) trends];
-    X    = [squeeze(prediction(:,n,:)) trends];
+    if iscell(prediction)
+        eachPrediction = cell2mat(cellfun(@(x) x(:,n,:), prediction, 'UniformOutput', false));
+        X    = [squeeze(eachPrediction) trends];
+    else
+        X    = [squeeze(prediction(:,n,:)) trends];
+    end
+
+    %     X    = [squeeze(prediction(:,n,:)) trends];
     
 %     Maxnorm = max(squeeze(prediction(:,n,:)));
 
     % This line takes up 30% of the time
     % lscov takes as long as the pinv method but provides the rss as well...
-    [b,~,rss]    = lscov(X,data); 
-    
+    [b,~,rss]    = lscov(gather(X),gather(data)); 
+%    b  = (ones([size(X,2) size(data,2)]));
+%rss  = ones(1,size(data,2));
+%     b = X \ data;
+%     response= X*b;ones(1,size(data,2))
+%     rs  = response - data;
+%     rss = sum(rs,1) ;
+
+% rssdata = sum(data.^2);
+
     % Compute RSS only for positive fits. The basic problem is
     % that if you have two complementary locations, you
     % could fit with a postive beta on the one that drives the signal or a
@@ -116,10 +137,16 @@ for n=1:numel(params.analysis.x0)
     model.rss(minRssIndex)      = rss(minRssIndex);
     model.b([1:nchan t_id],minRssIndex) = b(:,minRssIndex);
     
-end;
+end
 failedidx = startfind==0;
 startfind(failedidx) = 1; % just give index of one, b/c betas are zero anyways
-pred_X = prediction(:,startfind,:);
+
+if iscell(prediction)
+    pred_X = cell2mat(cellfun(@(x) x(:,startfind,:), prediction, 'UniformOutput', false));
+else
+    pred_X = prediction(:,startfind,:);
+end
+
 model.pred_X = pred_X;
 
 % figure()
