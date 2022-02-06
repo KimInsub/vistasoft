@@ -169,8 +169,11 @@ switch lower(wSearch)
         fprintf(1,'[%s]: *****************************************\n',mfilename);
         fprintf(1,'[%s]: *    ST model  solve Grid              *\n',mfilename);
         fprintf(1,'[%s]: *****************************************\n',mfilename);
-        view = stGridFit(view,params);
-
+        
+        grid_pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
+        if ~isfile(grid_pathStr)
+            view = stGridFit(view,params);
+        end
 %         fprintf(1,'[%s]: *****************************************\n',mfilename);
 %         fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
 %         fprintf(1,'[%s]: *****************************************\n',mfilename);

@@ -94,8 +94,8 @@ for n=1:numel(params.analysis.x0)
     % This line takes up 30% of the time
     % lscov takes as long as the pinv method but provides the rss as well...
     [b,~,rss]    = lscov(gather(X),gather(data)); 
-%    b  = (ones([size(X,2) size(data,2)]));
-%rss  = ones(1,size(data,2));
+%   b  = (ones([size(X,2) size(data,2)]));
+%    rss  = ones(1,size(data,2));
 %     b = X \ data;
 %     response= X*b;ones(1,size(data,2))
 %     rs  = response - data;
