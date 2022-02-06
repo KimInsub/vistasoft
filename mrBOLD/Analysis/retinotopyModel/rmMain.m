@@ -163,6 +163,13 @@ switch lower(wSearch)
         if ~isfile(params.analysis.predFile)
             view = stCreateGrid(view,params);
         end
+        
+    case {'10'}
+        
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+        fprintf(1,'[%s]: *    ST model  solve Grid              *\n',mfilename);
+        fprintf(1,'[%s]: *****************************************\n',mfilename);
+        view = stGridFit(view,params);
 
 %         fprintf(1,'[%s]: *****************************************\n',mfilename);
 %         fprintf(1,'[%s]: *       Works for ST model only!         *\n',mfilename);
@@ -184,7 +191,7 @@ end
 %-----------------------------------
 % Final fit (only for certain models)
 %-----------------------------------
-if ~strcmp(wSearch ,'1') && ~strcmp(wSearch ,'8') && ~strcmp(wSearch ,'9')
+if ~strcmp(wSearch ,'1') && ~strcmp(wSearch ,'8') && ~strcmp(wSearch ,'9')  && ~strcmp(wSearch ,'10')
     view = rmFinalFit(view,params);
 end
 % done
