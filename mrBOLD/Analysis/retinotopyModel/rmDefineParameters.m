@@ -1092,8 +1092,12 @@ for n=1:2:numel(vararg),
             
         case {'usegpu'} % useGPU
             params.useGPU = logical(data);
+        case {'fold'} % useGPU
+            params.fold = data;
+        case {'batchnumber'} % useGPU
+            params.batchNumber = data;
 
-        otherwise,
+        otherwise
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...
                 mfilename,vararg{n});
     end;

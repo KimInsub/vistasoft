@@ -144,8 +144,13 @@ switch lower(wSearch)
             fprintf(1,'[%s]: *****************************************\n',mfilename);
         end
         
+        if ~isfile(search_pathStr)
+            view = stSearchFit(view,params);
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+            fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+        end
 %         view = rm_st_SearchFit(view,params);
-        view = stSearchFit(view,params);
 
 %         if ~isfile(search_pathStr)
 %             view = rm_st_SearchFit(view,params);
@@ -186,7 +191,9 @@ switch lower(wSearch)
 %             fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
 %             fprintf(1,'[%s]: *****************************************\n',mfilename);
 %         end
-        
+    case {'11'}
+
+        stBatch(view,params)
     otherwise
         error('[%s]:Unknown search option: %s',mfilename,wSearch);
 end
@@ -194,7 +201,9 @@ end
 %-----------------------------------
 % Final fit (only for certain models)
 %-----------------------------------
-if ~strcmp(wSearch ,'1') && ~strcmp(wSearch ,'8') && ~strcmp(wSearch ,'9')  && ~strcmp(wSearch ,'10')
+if ~strcmp(wSearch ,'1') && ~strcmp(wSearch ,'8') ...
+        && ~strcmp(wSearch ,'9')  && ~strcmp(wSearch ,'10') ...
+        && ~strcmp(wSearch ,'11')
     view = rmFinalFit(view,params);
 end
 % done
