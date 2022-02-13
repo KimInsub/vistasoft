@@ -137,7 +137,6 @@ switch lower(wSearch)
 
         if ~isfile(grid_pathStr) 
             view = stGridFit(view,params);
-%             view = rmGridFit(view,params);
         else
             fprintf(1,'[%s]: *****************************************\n',mfilename);
             fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
@@ -146,19 +145,13 @@ switch lower(wSearch)
         
         if ~isfile(search_pathStr)
             view = stSearchFit(view,params);
+        else
             fprintf(1,'[%s]: *****************************************\n',mfilename);
             fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
             fprintf(1,'[%s]: *****************************************\n',mfilename);
         end
-%         view = rm_st_SearchFit(view,params);
 
-%         if ~isfile(search_pathStr)
-%             view = rm_st_SearchFit(view,params);
-%         else
-%             fprintf(1,'[%s]: *****************************************\n',mfilename);
-%             fprintf(1,'[%s]: *********   Skipping Search fit   *********\n',mfilename);
-%             fprintf(1,'[%s]: *****************************************\n',mfilename);
-%         end
+
     case {'9'}
         
         fprintf(1,'[%s]: *****************************************\n',mfilename);
