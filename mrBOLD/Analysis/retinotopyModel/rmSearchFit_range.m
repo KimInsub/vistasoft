@@ -88,7 +88,7 @@ end
 if isfield(model, 'exp')
     fieldnum=size(range.start, 1)+1;
     range.start(fieldnum,:) = model.exp;
-    gridExps_unique=unique(params.analysis.exp);
+    gridExps_unique = unique(params.analysis.exp);
     if numel(gridExps_unique) ~= 1
         gridExps=[min(gridExps_unique).*ones(expandRange,1); gridExps_unique; max(gridExps_unique).*ones(expandRange,1)];
         gridExps=double(gridExps);
@@ -100,6 +100,10 @@ if isfield(model, 'exp')
         range.upper(fieldnum,:) = gridExps(closestvalue+2);%expandRange);
         range.lower(fieldnum,:) = gridExps(closestvalue-2);%expandRange);
         
+        % set minumum
+        minIdx = (find(range.lower(fieldnum,:) == min(unique(range.start(fieldnum,:)))));
+        range.lower(fieldnum,minIdx) = 0.1;
+
     else
         range.upper(fieldnum,:) = ones(1,size(range.start,2));%expandRange);
         range.lower(fieldnum,:) = ones(1,size(range.start,2));%expandRange);        
