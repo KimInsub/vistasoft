@@ -387,6 +387,21 @@ try
         case 'pred_x'
             if isfield(model, 'pred_X'),    val = model.pred_X;
             else                            val = []; end
+            
+        case {'tau1'}
+            val = model.tau1;
+        case {'weight'}
+            val = model.weight;
+        case {'tau2'}
+            val = model.tau2;
+        case {'nn'}
+            val = model.nn;
+        case {'delay'}
+            val = model.delay;
+        case {'tau_s'}
+            val = model.tau_s;
+        case {'tau_t'}
+            val = model.tau_t;
 
         otherwise,
             error('[%s]:Unknown parameter: %s.',mfilename,param);

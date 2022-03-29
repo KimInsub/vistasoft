@@ -15,8 +15,10 @@ if ~exist('id','var') || isempty(id),       id = 1:numel(model); end
 % loop over models
 tmp = cell(numel(id),1);
 for n=id,
-    f = {'x0','y0','s','x02','y02','s2','s_major','s_minor','s_theta','rss','rss2','rawrss','rawrss2', 'exponent','varexpfitprf'};
+    f = {'x0','y0','s','x02','y02','s2','s_major','s_minor','s_theta',...
+        'rss','rss2','rawrss','rawrss2', 'exponent','varexpfitprf','tau1','tau2','weight','nn','delay','tau_s','tau_t'};
 %     f = {'x0','y0','s','x02','y02','s2','s_major','s_minor','s_theta','rss','rss2','rawrss','rawrss2', 'exponent'};
+%     f = {'tau_s','tau_t'};
 
     % for all models
     tmp{n}.desc = rmGet(model{n},'desc');
