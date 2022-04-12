@@ -134,8 +134,13 @@ switch lower(wSearch)
         
         grid_pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
         search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
-
-        if ~isfile(grid_pathStr) 
+        
+        % check all grid results
+        [tmp_a, tmp_b]=fileparts(grid_pathStr);
+        tmp_b = strsplit(tmp_b,'-'); tmp_b{4} = 'all';
+        grid_all_pathStr = join(tmp_b,'-');
+        
+        if ~isfile(grid_pathStr) && ~isfile(fullfile(tmp_a,[grid_all_pathStr{1} '.mat']))
             view = stGridFit(view,params);
         else
             fprintf(1,'[%s]: *****************************************\n',mfilename);

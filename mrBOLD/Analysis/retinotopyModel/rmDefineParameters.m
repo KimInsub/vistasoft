@@ -387,7 +387,7 @@ switch lower(params.analysis.pRFmodel{1})
 
         % if you want even bigger prf
 %         params.analysis.maxRF = params.analysis.fieldSize + 10; 
-        params.analysis.maxRF = round(params.analysis.fieldSize*1.5);
+%         params.analysis.maxRF = round(params.analysis.fieldSize*1.5);
 %         params.analysis.coarseDecimate = 0;
         params.analysis.nonlinear = true;
 %         params.matFileName =params.analysis.pRFmodel;
@@ -507,7 +507,7 @@ switch params.analysis.pRFmodel{1}
     
     case {'st'}
         % The number of exponents for nonlinear model (pred = (stim*prf)^exponent)
-        % without CSS for now %%%%%%%%%%%
+%         logspace(0.01,1,6)*0.1
         params.analysis.doBlankBaseline = 1;
         if strcmp(params.analysis.temporalModel,'3ch-stLN')
              params.analysis.numberExponents = 4 ;
