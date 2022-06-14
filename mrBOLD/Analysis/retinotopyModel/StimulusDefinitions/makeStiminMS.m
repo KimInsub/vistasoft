@@ -170,15 +170,15 @@ switch lower(params.analysis.pRFmodel{1})
 end
 
 % get the baseline estimate of the timecourse
-if params.analysis.doBlankBaseline == 1
-    params.stim(id).baseline = I.sec_sequence(params.stim(id).prescanDuration+1:end)==0;
-    
-    % shift 5 seconds to account for the HRF
-    params.stim(id).baseline = circshift(params.stim(id).baseline,6/params.stim(id).framePeriod);
-   
-    % and remove the initial junks (by product of the cirshift function)
-    params.stim(id).baseline(1:6) = 0;
-end
+% if params.analysis.doBlankBaseline == 1
+%     params.stim(id).baseline = I.sec_sequence(params.stim(id).prescanDuration+1:end)==0;
+%     
+%     % shift 5 seconds to account for the HRF
+%     params.stim(id).baseline = circshift(params.stim(id).baseline,6/params.stim(id).framePeriod);
+%    
+%     % and remove the initial junks (by product of the cirshift function)
+%     params.stim(id).baseline(1:6) = 0;
+% end
 
 % ALSO change prescandur to be in ms
 params.stim(id).prescanDuration = params.stim(id).prescanDuration * 1000; 
@@ -242,8 +242,8 @@ try
     display = P.params.display;
 catch 
     display = [];
-    warning('[%s]: No calibration file found. This may affect image filtering.',...
-        mfilename);
+%     warning('[%s]: No calibration file found. This may affect image filtering.',...
+%         mfilename);
 end
 
 % new filters can be made with the name rmfilter_*

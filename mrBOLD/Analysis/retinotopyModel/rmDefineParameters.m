@@ -671,7 +671,7 @@ params.analysis.fmins.refine = 'all';
 params.analysis.doDetrend = 1;
     
 % threshold methods
-params.analysis.fmins.vethresh = 0.2; % defualt is to (varexp > 0)
+params.analysis.fmins.vethresh = -999; % defualt is to (varexp > 0)
 params.analysis.fmins.threshtype = 'linear_top100';
 switch lower(params.analysis.fmins.threshtype)
     case 'top100'           % find triangular grid positions

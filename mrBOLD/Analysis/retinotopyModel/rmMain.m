@@ -147,13 +147,13 @@ switch lower(wSearch)
             fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
             fprintf(1,'[%s]: *****************************************\n',mfilename);
         end
-                search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
+        search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
 
         if ~isfile(search_pathStr)
             view = stSearchFit(view,params);
         else
             fprintf(1,'[%s]: *****************************************\n',mfilename);
-            fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
+            fprintf(1,'[%s]: *********   Skipping search fit   *********\n',mfilename);
             fprintf(1,'[%s]: *****************************************\n',mfilename);
         end
 
@@ -191,15 +191,12 @@ switch lower(wSearch)
 %             fprintf(1,'[%s]: *****************************************\n',mfilename);
 %         end
     case {'11'}
-
-        stBatch(view,params)
+        stSearchFit_batch(view,params)
+%         stBatch(view,params)
    case {'12'}
 
-        search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
-
-        if ~isfile(search_pathStr)
-            view = stSearchFit(view,params);
-        end
+%         search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
+        view = stSearchFit(view,params);
 
     otherwise
         error('[%s]:Unknown search option: %s',mfilename,wSearch);

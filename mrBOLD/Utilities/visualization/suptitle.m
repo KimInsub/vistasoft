@@ -64,13 +64,13 @@ figunits = get(gcf,'units');
 h = findobj(gcf,'Type','axes');  % Change suggested by Stacy J. Hills
 
 % If you don't have 4.2, use this code instead
-%ch = get(gcf,'children');
-%h=[];
-%for i=1:length(ch),
-%  if strcmp(get(ch(i),'type'),'axes'),
-%    h=[h,ch(i)];
-%  end
-%end
+ch = get(gcf,'children');
+h=[];
+for i=1:length(ch),
+ if strcmp(get(ch(i),'type'),'axes'),
+   h=[h,ch(i)];
+ end
+end
 
 	
 
@@ -109,7 +109,7 @@ ht=text(.5,titleypos-1,str);set(ht,'horizontalalignment','center','fontsize',fs)
 set(gcf,'nextplot',np);
 axes(haold);
 
-% fix legend if one exists
+fix legend if one exists
 legH = legend;
 if ~isempty(legH)
     axes(legH);
