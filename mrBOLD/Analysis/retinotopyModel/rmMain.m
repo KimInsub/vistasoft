@@ -191,11 +191,35 @@ switch lower(wSearch)
 %             fprintf(1,'[%s]: *****************************************\n',mfilename);
 %         end
     case {'11'}
-        stSearchFit_batch(view,params)
+%         stSearchFit_batch(view,params)
+%         view = stGridFit(view,params);
+        
+        grid_pathStr    = fullfile(dataDir(view),[params.matFileName{end} '-gFit.mat']);
+        search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
+        
+        % check all grid results
+        [tmp_a, tmp_b]=fileparts(grid_pathStr);
+        tmp_b = strsplit(tmp_b,'-'); tmp_b{4} = 'all';
+        grid_all_pathStr = join(tmp_b,'-');
+        
+        if ~isfile(grid_pathStr) && ~isfile(fullfile(tmp_a,[grid_all_pathStr{1} '.mat']))
+            view = stGridFit(view,params);
+        else
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+            fprintf(1,'[%s]: *********   Skipping Grid fit   *********\n',mfilename);
+            fprintf(1,'[%s]: *****************************************\n',mfilename);
+        end
+
+        
+        params.analysis.ignoreGrid = 1;
+        view = stSearchFit(view,params);
 %         stBatch(view,params)
    case {'12'}
 
 %         search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
+        view = stSearchFit(view,params);
+   case {'13'}
+        params.analysis.hrflib = 1;
         view = stSearchFit(view,params);
 
     otherwise
