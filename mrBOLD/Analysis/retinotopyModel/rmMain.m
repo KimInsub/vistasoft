@@ -219,7 +219,13 @@ switch lower(wSearch)
 %         search_pathStr  = fullfile(dataDir(view),[params.matFileName{end} '-sFit.mat']);
         view = stSearchFit(view,params);
    case {'13'}
+%         params.analysis.hrflib = 1;
+%         params.analysis.hrfver = 1;
+        view = stSearchFit(view,params);
+        
+   case {'14'}
         params.analysis.hrflib = 1;
+        params.analysis.hrfver = 2;
         view = stSearchFit(view,params);
 
     otherwise
@@ -229,10 +235,10 @@ end
 %-----------------------------------
 % Final fit (only for certain models)
 %-----------------------------------
-if ~strcmp(wSearch ,'1') && ~strcmp(wSearch ,'8') ...
-        && ~strcmp(wSearch ,'9')  && ~strcmp(wSearch ,'10') ...
-        && ~strcmp(wSearch ,'11')  && ~strcmp(wSearch ,'12')
-    view = rmFinalFit(view,params);
-end
+% if ~strcmp(wSearch ,'1') && ~strcmp(wSearch ,'8') ...
+%         && ~strcmp(wSearch ,'9')  && ~strcmp(wSearch ,'10') ...
+%         && ~strcmp(wSearch ,'11')  && ~strcmp(wSearch ,'12')
+%     view = rmFinalFit(view,params);
+% end
 % done
 return;

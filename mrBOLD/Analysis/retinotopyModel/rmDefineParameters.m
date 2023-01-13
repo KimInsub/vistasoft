@@ -1096,6 +1096,8 @@ for n=1:2:numel(vararg),
             params.fold = data;
         case {'batchnumber'} % useGPU
             params.batchNumber = data;
+        case {'hrfver'} % hrf
+            params.analysis.hrfver = data;
 
         otherwise
             fprintf(1,'[%s]:IGNORING unknown parameter: %s\n',...
@@ -1105,4 +1107,3 @@ end;
 fprintf(1,'.\n');
 return
 %------------------------------------------------------
-
