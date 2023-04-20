@@ -509,8 +509,8 @@ switch params.analysis.pRFmodel{1}
         % The number of exponents for nonlinear model (pred = (stim*prf)^exponent)
 %         logspace(0.01,1,6)*0.1
         params.analysis.doBlankBaseline = 1;
-        if strcmp(params.analysis.temporalModel,'3ch-stLN')
-             params.analysis.numberExponents = 4 ;
+        if ismember(params.analysis.temporalModel,{'3ch-stLN','CST'})
+            params.analysis.numberExponents = 4 ;
         else
             params.analysis.numberExponents = 1 ;
         end
